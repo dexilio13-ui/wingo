@@ -165,11 +165,11 @@ npm run watch              # neprekidno radi + notifikacije po svakom novom kolu
 npm run serve              # viewer na http://localhost:8080
 ```
 
-## GitHub Actions (auto-osvežavanje na 15 min)
+## GitHub Actions (auto-osvežavanje na 5 min)
 
 Workflow [`.github/workflows/update-bingo.yml`](.github/workflows/update-bingo.yml):
 
-- pokreće se **cron-om na svakih 15 minuta** (ili ručno preko *Run workflow* dugmeta),
+- pokreće se **cron-om na svakih 5 minuta** (ili ručno preko *Run workflow* dugmeta),
 - radi `npm ci` + `node scripts/fetch-bingo.mjs --quick`,
 - commituje i pushuje `data/bingo-results.json` **samo ako se sadržaj promenio**
   (novo kolo završeno), uz `git pull --rebase` pre push-a.
@@ -177,5 +177,16 @@ Workflow [`.github/workflows/update-bingo.yml`](.github/workflows/update-bingo.y
 Napomene:
 - GitHub onemogućava scheduled workflow-e u repozitorijumima bez aktivnosti duže od 60 dana —
   povremeno nešto commitujte ili ručno pokrenite workflow.
-- Cron na 15 min u praksi kašnji do par minuta; kola se izvuku na ~4 min, a fetch svaki put
-  vuče zadnjih ~10 kola, pa ništa ne propušta. Na privatnom repou troši ~1.400 Actions min/mes.
+- Cron na 5 min u praksi kašnji do par minuta; kola se izvuku na ~4 min, a fetch svaki put
+  vuče zadnjih ~10 kola, pa ništa ne propušta. Na javnom repou Actions su neograničeni.
+
+## Automatizacija "na klik"
+
+- **Feed se sam popuni** — u Wingo taktici (`wingo.html` → ⚙️ Podaci & podešavanja) podrazumevani
+  feed je `https://raw.githubusercontent.com/dexilio13-ui/wingo/main/data/bingo-results.json`;
+  ne moraš ništa da kucaš ručno. Radi i lokalno i na GitHub Pages-u.
+- **"↻ Osveži" pokreće i GitHub Action** — viewer (lokalno na :8080) uz osvežavanje feed-a
+  poziva i `http://localhost:3333/trigger`, a lokalni agent (`npm run trigger`) pokreće workflow
+  na GitHub-u. Novo kolo stiže u feed za ~1–2 min bez ikakvog ručnog koraka.
+- **Ručni trigger sa lokala:** `npm run trigger` (dodaj `-- --wait` da sačekaš kraj i vidiš status).
+- **START-ALL.bat** pored fetch-a, watch-a i servera sada i automatski triggeruje workflow.

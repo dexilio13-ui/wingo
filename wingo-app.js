@@ -9,6 +9,11 @@ const BALL_COLORS = ["purple","yellow","green","blue","red","brown","orange","bl
 const ballColor = (n) => BALL_COLORS[n % 8];
 const LIGHT = new Set(["yellow", "orange"]);
 
+// Podrazumevani feed: live JSON iz ovog repoa (radi lokalno i na GitHub Pages-u).
+// Ne moraš ništa da kucaš ručno u „Podaci & podešavanja” — automatski se koristi.
+const DEFAULT_FEED_URL =
+  "https://raw.githubusercontent.com/dexilio13-ui/wingo/main/data/bingo-results.json";
+
 const LS = {
   feedUrl: "wingo.feedUrl",
   manual: "wingo.manualRounds",
@@ -795,10 +800,20 @@ function initSettings() {
 
 function init() {
   initSettings();
-  $("#feedUrl").value = load(LS.feedUrl, "");
+  $("#feedUrl").value = load(LS.feedUrl, DEFAULT_FEED_URL);
   fillWheelTOptions();
 
-  $("#btnReloadFeed").addEventListener("click", () => reloadFeed(false));
+  $("#btnReloadFeed").addEventListener("click", async () => {
+    // 1) odmah osveži lokalno (iz cache-busted feed-a),
+    await reloadFeed(false);
+    // 2) pa u pozadini triggeruj GitHub Action da bot povuče i najnovije kolo
+    //    (odgovor stiže kroz ~1–2 min kroz automatski reload na 60 s)
+    try {
+      const r = await fetch("http://localhost:3333/trigger");
+      if (r.ok) toast("GitHub Action pokrenut — feed stiže za ~1–2 min");
+    } catch { /* lokalni agent nije aktivan — feed se ionako osvežava na 60 s */ }
+    renderAll();
+  });
   $("#btnSaveUrl").addEventListener("click", () => reloadFeed(false));
   $("#btnAddManual").addEventListener("click", addManualRound);
   $("#btnImport").addEventListener("click", importJson);

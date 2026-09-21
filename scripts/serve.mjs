@@ -22,6 +22,23 @@ const MIME = {
 http
   .createServer((req, res) => {
     let pathname = decodeURIComponent(new URL(req.url, "http://x").pathname);
+
+    // GET /trigger → pokreni GitHub Actions workflow (fetch-bingo) sa ovog računara.
+    // Koristi se iz viewer-a: dugme „↻ Osveži” ga zove u pozadini.
+    if (pathname === "/trigger") {
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: true, hint: "workflow pokrenut" }));
+      import("node:child_process").then(({ spawn }) => {
+        const child = spawn(process.execPath, [path.join(ROOT, "scripts", "trigger-workflow.mjs")], {
+          cwd: ROOT,
+          detached: true,
+          stdio: "ignore",
+        });
+        child.unref();
+      });
+      return;
+    }
+
     if (pathname === "/") pathname = "/index.html";
     const file = path.join(ROOT, path.normalize(pathname));
     if (!file.startsWith(path.normalize(ROOT))) {

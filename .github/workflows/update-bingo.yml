@@ -2,7 +2,7 @@ name: Update bingo results
 
 on:
   schedule:
-    - cron: "*/15 * * * *" # SVAKIH 15 MINUTA (štedi Actions minute; kola se izvuku na ~4 min, ništa ne propušta)
+    - cron: "*/5 * * * *" # SVAKIH 5 MINUTA (repo je javan — Actions su besplatni i neograničeni)
   workflow_dispatch:
     inputs:
       quick:

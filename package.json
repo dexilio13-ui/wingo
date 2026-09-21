@@ -7,7 +7,8 @@
   "scripts": {
     "fetch": "node scripts/fetch-bingo.mjs",
     "watch": "node scripts/fetch-bingo.mjs --watch",
-    "serve": "node scripts/serve.mjs"
+    "serve": "node scripts/serve.mjs",
+    "trigger": "node scripts/trigger-workflow.mjs"
   },
   "dependencies": {
     "@microsoft/signalr": "^8.0.7"

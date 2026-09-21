@@ -34,19 +34,12 @@ call node scripts\fetch-bingo.mjs --quick
 if errorlevel 1 goto :fail
 
 echo.
-echo  [3/5] GitHub Action workflow (update-bingo.yml)...
-where gh >nul 2>nul
+echo  [3/5] GitHub Action trigger (osvezava feed na GitHub-u)...
+call npm run trigger
 if errorlevel 1 (
-    echo        gh CLI nije nadjen - preskacem.
-    echo        Actions i inace rade sami po cron-u na svaki minut.
+    echo        Trigger nije prosao - Actions i dalje rade sami po cron-u na 5 min.
 ) else (
-    gh workflow run update-bingo.yml
-    if errorlevel 1 (
-        echo        Workflow nije pokrenut iz terminala - probaj "gh auth login".
-        echo        Actions i dalje rade sami po cron-u na svaki minut.
-    ) else (
-        echo        Workflow pokrenut - prati: GitHub repo ^> Actions.
-    )
+    echo        Workflow pokrenut - feed se osvezava za ~1-2 min.
 )
 
 echo.
