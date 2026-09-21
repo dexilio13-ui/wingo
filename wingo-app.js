@@ -171,7 +171,8 @@ async function reloadFeed(silent) {
   const url = $("#feedUrl").value.trim();
   if (!url) { if (!silent) toast("Unesi feed URL u „Podaci & podešavanja”"); return; }
   try {
-    const res = await fetch(url, { cache: "no-store" });
+    // cache-busting: radi i za GitHub Pages (CDN keš) i za raw.githubusercontent.com
+    const res = await fetch(`${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     applyFeedData(data);

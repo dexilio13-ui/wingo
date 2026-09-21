@@ -345,7 +345,8 @@ function showError(msg) {
 
 async function load() {
   try {
-    const res = await fetch("data/bingo-results.json", { cache: "no-store" });
+    // cache-busting: GitHub Pages CDN kešira ~10 min, ?t= forsira svež JSON
+    const res = await fetch(`data/bingo-results.json?t=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
 
