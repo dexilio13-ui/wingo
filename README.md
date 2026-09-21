@@ -2,7 +2,7 @@
 
 Prati rezultate **online bingo** kola sa [volcanobet.rs/bingo](https://www.volcanobet.rs/bingo)
 (tab *Tickets* → *Results / last*) i u jednom fajlu — `data/bingo-results.json` — održava
-**zadnjih 40 kola** (novija prva), uz automatsko osvežavanje **na svaki minut** (GitHub Actions).
+**zadnjih 40 kola** (novija prva), uz automatsko osvežavanje **na svakih 15 minuta** (GitHub Actions).
 
 ## Kako radi
 
@@ -102,11 +102,11 @@ npm run watch              # neprekidno radi + notifikacije po svakom novom kolu
 npm run serve              # viewer na http://localhost:8080
 ```
 
-## GitHub Actions (auto-osvežavanje na minut)
+## GitHub Actions (auto-osvežavanje na 15 min)
 
 Workflow [`.github/workflows/update-bingo.yml`](.github/workflows/update-bingo.yml):
 
-- pokreće se **cron-om na svaki minut** (ili ručno preko *Run workflow* dugmeta),
+- pokreće se **cron-om na svakih 15 minuta** (ili ručno preko *Run workflow* dugmeta),
 - radi `npm ci` + `node scripts/fetch-bingo.mjs --quick`,
 - commituje i pushuje `data/bingo-results.json` **samo ako se sadržaj promenio**
   (novo kolo završeno), uz `git pull --rebase` pre push-a.
@@ -114,5 +114,5 @@ Workflow [`.github/workflows/update-bingo.yml`](.github/workflows/update-bingo.y
 Napomene:
 - GitHub onemogućava scheduled workflow-e u repozitorijumima bez aktivnosti duže od 60 dana —
   povremeno nešto commitujte ili ručno pokrenite workflow.
-- Cron na minut je u praksi pouzdan na ~1–5 min kašnjenja; kola se izvuku na ~4 min,
-  pa to i dalje pokriva svako kolo.
+- Cron na 15 min u praksi kašnji do par minuta; kola se izvuku na ~4 min, a fetch svaki put
+  vuče zadnjih ~10 kola, pa ništa ne propušta. Na privatnom repou troši ~1.400 Actions min/mes.

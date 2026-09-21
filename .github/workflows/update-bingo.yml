@@ -2,7 +2,7 @@ name: Update bingo results
 
 on:
   schedule:
-    - cron: "* * * * *" # SVAKI MINUT
+    - cron: "*/15 * * * *" # SVAKIH 15 MINUTA (štedi Actions minute; kola se izvuku na ~4 min, ništa ne propušta)
   workflow_dispatch:
     inputs:
       quick:
@@ -20,7 +20,7 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
