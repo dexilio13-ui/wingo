@@ -1,0 +1,57 @@
+name: Update bingo results
+
+on:
+  schedule:
+    - cron: "* * * * *" # SVAKI MINUT
+  workflow_dispatch:
+    inputs:
+      quick:
+        description: "Brzi snimak bez čekanja na tekuće kolo"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bingo-results
+  cancel-in-progress: true
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # refetch poslednjeg commit-a bez merge-a; push dole je fast-forward
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Brzi snimak: hub odmah vraća zadnjih ~10 završenih kola u ReceiveOfferState,
+      # pa ne moramo da čekamo da se tekuće kolo izvuče do kraja.
+      - name: Fetch bingo results
+        env:
+          BINGO_WEBHOOK_URL: ${{ secrets.BINGO_WEBHOOK_URL }}
+          BINGO_WEBHOOK_FORMAT: ${{ secrets.BINGO_WEBHOOK_FORMAT }}
+        run: node scripts/fetch-bingo.mjs --quick
+
+      - name: Commit & push (samo ako se JSON promenio)
+        run: |
+          git config user.name "bingo-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/bingo-results.json
+          if git diff --cached --quiet; then
+            echo "Nema promena — preskačem commit."
+          else
+            git commit -m "chore: osveži bingo rezultate ($(date -u '+%Y-%m-%d %H:%M UTC'))"
+            # pre push-a povuci eventualne nove commit-e (smanji rizik od race-a)
+            git pull --rebase origin HEAD || true
+            git push
+          fi

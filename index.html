@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Volcanobet Bingo — zadnjih 40 kola</title>
+<style>
+  :root {
+    --bg: #12141a;
+    --card: #1b1e27;
+    --card-border: #2a2e3d;
+    --text: #e8eaf0;
+    --muted: #9aa0b0;
+    --accent: #ffd166;
+    --live: #ff4d5e;
+    /* boje lopti (n % 8), kao na sajtu */
+    --c-purple: #8e44ad;
+    --c-yellow: #f5c518;
+    --c-green:  #27ae60;
+    --c-blue:   #2f80ed;
+    --c-red:    #d63031;
+    --c-brown:  #8d6e63;
+    --c-orange: #f39c12;
+    --c-black:  #2d3436;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    padding: 12px 18px; background: rgba(18,20,26,.92); backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--card-border);
+  }
+  h1 { font-size: 18px; margin: 0; }
+  h1 small { color: var(--muted); font-weight: 400; }
+  .meta { margin-left: auto; display: flex; gap: 12px; align-items: center; font-size: 13px; color: var(--muted); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #3ddc84; display: inline-block; animation: pulse 2s infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  button {
+    background: var(--card); color: var(--text); border: 1px solid var(--card-border);
+    border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 13px;
+  }
+  button:hover { border-color: var(--accent); }
+  main { padding: 18px; max-width: 1400px; margin: 0 auto; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 0 0 14px; font-size: 12.5px; color: var(--muted); align-items: center; }
+  .legend .ball { width: 20px; height: 20px; font-size: 10px; }
+  .legend .chip { padding: 0 8px; font-size: 11px; }
+  .error {
+    background: #3a1d21; border: 1px solid #7a2c35; color: #ffb3ba;
+    padding: 12px 16px; border-radius: 10px; margin-bottom: 14px; font-size: 14px;
+  }
+  .hidden { display: none; }
+
+  /* ── kolo u toku ── */
+  .live {
+    background: linear-gradient(180deg, rgba(255,77,94,.12), transparent);
+    border: 1px solid rgba(255,77,94,.45); border-radius: 14px;
+    padding: 14px 16px; margin-bottom: 18px;
+  }
+  .live h2 { margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .live h2 .rec { width: 10px; height: 10px; border-radius: 50%; background: var(--live); animation: pulse 1s infinite; }
+  .live .balls { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* ── statistika ── */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .stats .card h3 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12.5px; }
+  .bar-track { flex: 1; height: 10px; background: #262a37; border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; }
+  .stat-num { min-width: 30px; text-align: right; color: var(--muted); }
+  .mini-ball { width: 22px; height: 22px; font-size: 10.5px; flex: none; }
+  .chip {
+    border: 1px solid var(--accent); color: var(--accent); border-radius: 999px;
+    padding: 1px 8px; font-weight: 700; font-size: 11.5px;
+  }
+  .eo { display: flex; gap: 10px; font-size: 13px; align-items: baseline; }
+  .eo b { font-size: 17px; }
+
+  /* ── grid kartica kola ── */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 14px; padding: 12px 14px;
+  }
+  .card-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .round-no { font-size: 19px; font-weight: 700; color: var(--accent); }
+  .round-time { margin-left: auto; font-size: 12.5px; color: var(--muted); }
+  .balls { display: flex; flex-wrap: wrap; gap: 5px; }
+  .ball {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff; flex: none;
+  }
+  .ball.light { color: #1c1c1c; }
+  .ball.ff { box-shadow: 0 0 0 2px rgba(255,255,255,.9); }
+  .ball.ss { box-shadow: 0 0 0 2px rgba(255,255,255,.9), 0 0 0 4px var(--accent); }
+  .ball.pending { background: transparent; border: 1px dashed #4a4f63; color: transparent; }
+  .card.fresh { border-color: var(--accent); animation: fresh 2.4s ease-out; }
+  @keyframes fresh { 0% { box-shadow: 0 0 0 4px rgba(255,209,102,.35); } 100% { box-shadow: none; } }
+  .jp { margin-top: 10px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .tool-link {
+    display: inline-block; margin-left: 10px; color: var(--accent); font-size: 13px;
+    text-decoration: none; border: 1px solid var(--accent); border-radius: 999px; padding: 3px 12px;
+  }
+  footer { padding: 10px 18px 24px; color: var(--muted); font-size: 12px; text-align: center; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎰 Volcanobet Bingo <small>— zadnjih 40 kola</small></h1>
+  <div class="meta">
+    <span id="stats">učitavam…</span>
+    <span id="updated"></span>
+    <button id="refresh" type="button">↻ Osveži</button>
+    <span class="dot" title="auto-osvežavanje na 60 s"></span>
+  </div>
+</header>
+
+<main>
+  <div class="legend">
+    <span><span class="ball ff" style="background:#555">·</span> među prvih 5</span>
+    <span><span class="ball ss" style="background:#555">·</span> sweet spot</span>
+    <span><span class="chip">10</span> jackpot broj</span>
+    <span>boje: purple · yellow · green · blue · red · brown · orange · black (n % 8)</span>
+    <a class="tool-link" href="wingo.html">🎯 Wingo taktika →</a>
+  </div>
+
+  <div id="error" class="error hidden"></div>
+  <section id="live" class="live hidden"></section>
+  <section id="statsBox" class="stats hidden"></section>
+  <div id="rounds" class="grid"></div>
+</main>
+
+<footer>Podaci: javni feed stranice <a href="https://www.volcanobet.rs/bingo?tab=tickets&amp;results=last" target="_blank" rel="noopener">volcanobet.rs/bingo</a> · auto-osvežavanje na 60 s · <a href="wingo.html">Wingo taktika</a></footer>
+
+<script>
+"use strict";
+
+const COLOR_VARS = ["purple","yellow","green","blue","red","brown","orange","black"];
+const ballColor  = (n) => COLOR_VARS[n % 8];
+const LIGHT_TEXT = new Set(["yellow", "orange"]); // tamniji tekst na svetlim loptama
+
+const $ = (sel) => document.querySelector(sel);
+
+const timeFmt = new Intl.DateTimeFormat("sr-RS", {
+  timeZone: "Europe/Belgrade", hour: "2-digit", minute: "2-digit", second: "2-digit"
+});
+const dateFmt = new Intl.DateTimeFormat("sr-RS", {
+  timeZone: "Europe/Belgrade", day: "2-digit", month: "2-digit",
+  hour: "2-digit", minute: "2-digit"
+});
+
+function fmtDrawn(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay = d.toLocaleDateString("sr-RS", { timeZone: "Europe/Belgrade" }) ===
+                  now.toLocaleDateString("sr-RS", { timeZone: "Europe/Belgrade" });
+  return sameDay ? timeFmt.format(d) : dateFmt.format(d);
+}
+
+function fmtUpdated(iso) {
+  if (!iso) return "";
+  return "ažurirano " + dateFmt.format(new Date(iso));
+}
+
+/** Jedna lopta. sweetSpot/firstFive -> okviri. */
+function ballEl(num, { sweetSpot = false, firstFive = false, pending = false, mini = false } = {}) {
+  const el = document.createElement("span");
+  el.className = "ball" + (mini ? " mini-ball" : "");
+  if (pending) { el.classList.add("pending"); return el; }
+  const color = ballColor(num);
+  el.style.background = `var(--c-${color})`;
+  if (LIGHT_TEXT.has(color)) el.classList.add("light");
+  if (sweetSpot) el.classList.add("ss");
+  else if (firstFive) el.classList.add("ff");
+  el.textContent = num;
+  el.title = `${num} — ${color}`;
+  return el;
+}
+
+function ballRow(balls, { sweetSpots = new Set(), firstFiveCount = 0, total = null } = {}) {
+  const wrap = document.createElement("div");
+  wrap.className = "balls";
+  balls.forEach((n, i) => {
+    wrap.appendChild(ballEl(n, {
+      sweetSpot: sweetSpots.has(n),
+      firstFive: i < firstFiveCount && !sweetSpots.has(n),
+    }));
+  });
+  if (total && balls.length < total) {
+    for (let i = balls.length; i < total; i++) wrap.appendChild(ballEl(0, { pending: true }));
+  }
+  return wrap;
+}
+
+/* ── Statistika ────────────────────────────────────────────────────────── */
+
+function statCard(title) {
+  const card = document.createElement("div");
+  card.className = "card";
+  const h = document.createElement("h3");
+  h.textContent = title;
+  card.appendChild(h);
+  return card;
+}
+
+function barRow(labelNode, value, max, color, valueText) {
+  const row = document.createElement("div");
+  row.className = "bar-row";
+  if (labelNode) row.appendChild(labelNode);
+  const track = document.createElement("div");
+  track.className = "bar-track";
+  const fill = document.createElement("div");
+  fill.className = "bar-fill";
+  fill.style.width = `${max ? Math.max(4, (value / max) * 100) : 0}%`;
+  fill.style.background = color || "var(--accent)";
+  track.appendChild(fill);
+  row.appendChild(track);
+  const num = document.createElement("span");
+  num.className = "stat-num";
+  num.textContent = valueText ?? value;
+  row.appendChild(num);
+  return row;
+}
+
+function renderStats(stats, totalRounds) {
+  const box = $("#statsBox");
+  if (!stats || !totalRounds) { box.classList.add("hidden"); box.replaceChildren(); return; }
+  box.classList.remove("hidden");
+  box.replaceChildren();
+
+  // Top 10 + hladnih 5
+  {
+    const card = statCard(`Najčešći brojevi (zadnjih ${totalRounds} kola)`);
+    const max = stats.top_numbers?.[0]?.count || 1;
+    for (const t of (stats.top_numbers || []).slice(0, 10)) {
+      card.appendChild(barRow(ballEl(t.number, { mini: true }), t.count, max, `var(--c-${ballColor(t.number)})`, `${t.count}×`));
+    }
+    const cold = document.createElement("div");
+    cold.style.marginTop = "10px";
+    cold.innerHTML = '<span style="color:var(--muted);font-size:12px">najređi:</span> ';
+    for (const c of (stats.cold_numbers || []).slice(0, 5)) {
+      cold.appendChild(ballEl(c.number, { mini: true }));
+    }
+    card.appendChild(cold);
+    box.appendChild(card);
+  }
+
+  // Parno / neparno
+  {
+    const card = statCard("Parno / neparno");
+    const eo = stats.even_odd || {};
+    const wrap = document.createElement("div");
+    wrap.className = "eo";
+    wrap.innerHTML =
+      `<b style="color:var(--c-blue)">${eo.even_percentage ?? 0}%</b> parno&nbsp;·&nbsp;` +
+      `<b style="color:var(--c-orange)">${eo.odd_percentage ?? 0}%</b> neparno`;
+    card.appendChild(wrap);
+    card.appendChild(barRow(null, eo.even ?? 0, Math.max(eo.even || 1, eo.odd || 1), "var(--c-blue)", `${eo.even ?? 0} parnih`));
+    card.appendChild(barRow(null, eo.odd ?? 0, Math.max(eo.even || 1, eo.odd || 1), "var(--c-orange)", `${eo.odd ?? 0} neparnih`));
+    box.appendChild(card);
+  }
+
+  // Boje
+  {
+    const card = statCard("Boje lopti");
+    const colors = stats.colors || {};
+    const max = Math.max(...Object.values(colors).map((c) => c.count), 1);
+    for (const c of COLOR_VARS) {
+      const d = colors[c] || { count: 0, percentage: 0 };
+      card.appendChild(barRow(null, d.count, max, `var(--c-${c})`, `${d.count} (${d.percentage}%)`));
+    }
+    box.appendChild(card);
+  }
+}
+
+/* ── Kolo u toku ───────────────────────────────────────────────────────── */
+
+function liveSection(live) {
+  const sec = $("#live");
+  if (!live || !Array.isArray(live.balls) || live.balls.length === 0) {
+    sec.classList.add("hidden");
+    sec.replaceChildren();
+    return;
+  }
+  sec.classList.remove("hidden");
+  sec.replaceChildren();
+  const h = document.createElement("h2");
+  h.innerHTML = '<span class="rec"></span>';
+  h.append(`Kolo #${live.round_number} — izvlačenje u toku (${live.balls.length}/35)`);
+  sec.appendChild(h);
+  sec.appendChild(ballRow(live.balls, { total: 35 }));
+}
+
+/* ── Kartice kola ──────────────────────────────────────────────────────── */
+
+let lastSeenTopRound = null;
+
+function roundCard(round, fresh) {
+  const card = document.createElement("div");
+  card.className = "card" + (fresh ? " fresh" : "");
+
+  const head = document.createElement("div");
+  head.className = "card-head";
+  const no = document.createElement("span");
+  no.className = "round-no";
+  no.textContent = "#" + round.round_number;
+  const t = document.createElement("span");
+  t.className = "round-time";
+  t.textContent = fmtDrawn(round.drawn_at);
+  head.append(no, t);
+  card.appendChild(head);
+
+  const ss = new Set();
+  if (round.sweet_spot != null) ss.add(round.sweet_spot);
+  if (round.sweet_spot2 != null) ss.add(round.sweet_spot2);
+  card.appendChild(ballRow(round.balls, { sweetSpots: ss, firstFiveCount: 5 }));
+
+  if (Array.isArray(round.jackpot_numbers) && round.jackpot_numbers.length) {
+    const jp = document.createElement("div");
+    jp.className = "jp";
+    jp.append("Jackpot:");
+    for (const n of round.jackpot_numbers) {
+      const c = document.createElement("span");
+      c.className = "chip";
+      c.textContent = n;
+      jp.appendChild(c);
+    }
+    card.appendChild(jp);
+  }
+  return card;
+}
+
+function showError(msg) {
+  const el = $("#error");
+  el.textContent = msg;
+  el.classList.remove("hidden");
+}
+
+async function load() {
+  try {
+    const res = await fetch("data/bingo-results.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+
+    $("#error").classList.add("hidden");
+    $("#stats").textContent = `${data.rounds_count} kola · zadnje #${data.rounds[0]?.round_number ?? "—"}`;
+    $("#updated").textContent = fmtUpdated(data.updated_at);
+
+    liveSection(data.live_round);
+    renderStats(data.stats, data.stats?.computed_over_rounds);
+
+    const rounds = [...(data.rounds || [])].sort((a, b) => b.round_number - a.round_number);
+    const top = rounds[0]?.round_number ?? null;
+    const fresh = lastSeenTopRound != null && top != null && top > lastSeenTopRound;
+
+    const grid = $("#rounds");
+    grid.replaceChildren();
+    for (const r of rounds) grid.appendChild(roundCard(r, fresh && r.round_number === top));
+    lastSeenTopRound = top;
+  } catch (err) {
+    const hint = location.protocol === "file:"
+      ? " Otvori preko lokalnog servera: pokreni „npm run serve“ pa otvori http://localhost:8080 (browser blokira fetch sa file://)."
+      : "";
+    showError("Ne mogu da učitam data/bingo-results.json (" + (err?.message || err) + ")." + hint);
+  }
+}
+
+$("#refresh").addEventListener("click", load);
+setInterval(load, 60_000);
+load();
+</script>
+</body>
+</html>
