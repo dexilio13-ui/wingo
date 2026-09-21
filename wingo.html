@@ -78,6 +78,10 @@
     font-weight: 700; border-radius: 10px; padding: 10px 16px; box-shadow: 0 6px 20px rgba(0,0,0,.5);
     opacity: 0; transform: translateY(8px); transition: .25s; z-index: 50; pointer-events: none; }
   .toast.show { opacity: 1; transform: none; }
+  .guide { margin: 0; padding-left: 18px; line-height: 1.75; }
+  .guide li { margin-bottom: 4px; }
+  .guide-table th, .guide-table td { font-size: 12px; }
+  .guide-table td b { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -96,6 +100,7 @@
     <button class="tab-btn active" data-tab="istorija">Istorija & toploga</button>
     <button class="tab-btn" data-tab="drzi">🎯 Drži 6</button>
     <button class="tab-btn" data-tab="wheel">🧩 Kombinacije (wheel)</button>
+    <button class="tab-btn" data-tab="vodic">📖 Pravila & taktika</button>
     <button class="tab-btn" data-tab="podesavanja">⚙️ Podaci & podešavanja</button>
   </div>
 
@@ -180,6 +185,50 @@
       <h3>Praćenje kombinacija (rezultati po novim kolima)</h3>
       <div id="wheelTrack" class="muted">—</div>
     </div>
+  </section>
+
+  <!-- ═══ VODIČ: pravila & taktika ═══ -->
+  <section id="panel-vodic" class="panel">
+    <div class="card">
+      <h3>Kako funkcioniše Wingo (klađenje na brojeve)</h3>
+      <ul class="guide">
+        <li><b>35 od 48:</b> u svakom kolu izvuče se <b>35 lopti od 48</b> (1–48); runda traje <b>~4 min</b> (mereno sa feeda).</li>
+        <li><b>Tiket:</b> biraš <b>1–8 brojeva</b> (jedna kombinacija); na isti tiket možeš dodati i druga tržišta (sweet spot, poslednja lopta…). Više kombinacija = više uloga na tiketu.</li>
+        <li><b>Minimalna uplata: 0,50 €</b> po tiketu.</li>
+        <li><b>Dobitak:</b> svi tvoji brojevi među 35 izvučenih; parcijalni pogoci se plaćaju po važećem kvotniku runde — uvek ga proveri u aplikaciji pre uplate, kvote se menjaju iz runde u rundu.</li>
+        <li><b>Gold runda:</b> dobitak se množi (najmanje ×2). <b>Back-up runda:</b> bez pogotka → ulog se vraća (zlatna/zelena boja ekrana ih najavljuje).</li>
+        <li><b>Wingo Pinjata:</b> nasumični bonus — može pasti i na gubitnički tiket.</li>
+        <li><b>Jackpot:</b> 5 posebnih brojeva kola; pogodak svih nosi jackpot. Dolazi uz tiket, ne plaća se posebno.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Tipovi klađenja — min/max i matematika (35/48)</h3>
+      <p class="muted" style="margin-top:0">Fer kvota = 1/verovatnoća; realne kvote su obično 10–20% ispod fer vrednosti. Tabela pokriva matematiku sistema 35/48, ne zvanični kvotnik.</p>
+      <div style="overflow:auto"><table class="guide-table">
+        <thead><tr><th>Tip</th><th>Šta je</th><th>Min–max</th><th>Verovatnoća (fer kvota)</th><th>Napomena</th></tr></thead>
+        <tbody>
+          <tr><td><b>Brojevi</b> (glavni tip)</td><td>Tvojih 1–8 brojeva mora biti među 35 izvučenih</td><td><b>1–8 brojeva</b> po kombinaciji, min. 0,50 €</td><td>1: 72,9% (×1,4) · 2: 52,8% (×1,9) · 3: 37,8% (×2,6) · 4: 26,9% (×3,7) · 5: 19,0% (×5,3) · 6: 13,2% (×7,6) · 7: 9,1% (×11) · 8: 6,2% (×16)</td><td>Manje brojeva = češći manji dobici; više = redji veći</td></tr>
+          <tr><td><b>Delimični pogoci</b></td><td>npr. bar 4 od tvojih 6</td><td>po kvotniku runde</td><td>bar 4/6: 80,9% · bar 5/6: 47,6% · bar 5/7: 72,2% · bar 6/8: 63,0%</td><td>Ključno za wheel garancije</td></tr>
+          <tr><td><b>Prvih 5</b></td><td>tvoj broj među prvih 5 lopti</td><td>obično 1–3 broja</td><td>1: 10,4% (×9,6) · 2: 0,9% (×113) · 3: 0,06% (×1729)</td><td>Mali uzorak = čista sreća, velike kvote</td></tr>
+          <tr><td><b>Poslednja lopta</b></td><td>koja lopta će biti 35. (poslednja)</td><td>1 broj</td><td>1/48 = 2,1% (×48)</td><td>Matematički isto kao bilo koji jedan broj</td></tr>
+          <tr><td><b>Sweet spot 1/2</b></td><td>2 posebna broja kola (označeni na sajtu)</td><td>1 broj</td><td>≈ 2/48 = 4,2% (×24)</td><td>Prati se u JSON-u (<code>sweet_spot</code>)</td></tr>
+          <tr><td><b>Jackpot brojevi</b></td><td>5 posebnih brojeva, svi moraju da pogode</td><td>uz tiket</td><td>~1 : 1,71 mil. (tačnih 5 od 48)</td><td>Bonus, ne strategija</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h3>Predlozi taktike</h3>
+      <ul class="guide">
+        <li><b>Glavni tip — drži konstantan set:</b> 6 brojeva, narednih 4–8 kola. Tab „🎯 Drži 6” vodi istoriju držanja i sprečava impulsne promene.</li>
+        <li><b>Glavni tip — wheel:</b> umesto jedne kombinacije od 6, odigraj npr. 4 kombinacije po 6 iz birice od 8: ako 5 od tvojih 8 izađe, bar jedna ima 5 pogodaka. Ukupni ulog ×4, pokrivaš varijansu. Tab „🧩 Kombinacije” računa minimalan broj kombinacija sa računski proverenom garancijom (birica 10, k=6, T=4 → ~10 kombinacija; birica 12 → ~29).</li>
+        <li><b>Glavni tip — bankroll:</b> fiksni budžet po sesiji (npr. 10 € = 20 × 0,50 €), nikad „povraćaj” posle gubitka; Back-up runde su pokriće, ne razlog da dižeš ulog.</li>
+        <li><b>Prvih 5 / poslednja lopta:</b> ako ih igraš — fiksni mali ulog (0,50–1 €) odvojen od glavnog pokrivača; statistika <code>first_five</code>/<code>last_ball</code> pomaže pri izboru, ali ne menja verovatnoću.</li>
+        <li><b>Sweet spot:</b> bonus karakter; prati <code>sweet_spot</code>/<code>sweet_spot2</code> u JSON-u.</li>
+        <li><b>Jackpot:</b> ne plaćaj dodatni ulog radi njega — dolazi uz tiket.</li>
+        <li><b>Kombinovanje tržišta:</b> dobro uz Back-up runde (ulog nazad), ali diže cenu tiketa; češće je bolje više kombinacija glavnog tipa nego rasipanje po sporednim tržištima.</li>
+      </ul>
+    </div>
+    <div class="disclaimer">⚠️ RNG nema memoriju — prošla frekvencija ne utiče na buduća izvlačenja. Ovaj vodič objašnjava matematiku i organizaciju igre, ne garantuje dobitak. Igraj odgovorno, 18+.</div>
   </section>
 
   <!-- ═══ PODACI ═══ -->
