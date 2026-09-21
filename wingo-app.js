@@ -158,7 +158,10 @@ function applyFeedData(data) {
   if (data && Array.isArray(data.rounds)) {
     state.rounds = data.rounds
       .filter((r) => Array.isArray(r.balls) && r.balls.length)
-      .map((r) => ({ round_number: r.round_number, drawn_at: r.drawn_at, balls: r.balls }));
+      .map((r) => ({
+        round_number: r.round_number, drawn_at: r.drawn_at, balls: r.balls,
+        sweet_spot: r.sweet_spot ?? null, sweet_spot2: r.sweet_spot2 ?? null,
+      }));
     state.feedInfo = { updated_at: data.updated_at, source: data.source };
   }
   if (data && data.live_round && Array.isArray(data.live_round.balls)) {
@@ -193,6 +196,7 @@ function renderAll() {
   const uni = +($("#universe").value || 48);
   const depth = +($("#depth").value || 40);
   const rounds = allRounds();
+  renderSweetSpot();
   if (!rounds.length) { $("#feedStatus").textContent = "feed: nema podataka"; return; }
 
   const A = analyze(rounds, uni, depth);
@@ -226,6 +230,89 @@ function renderLive() {
   } else {
     box.textContent = "— trenutno nema kola u toku —";
   }
+}
+
+/* ── Sweet spot statistika (vodič) ─────────────────────────────────────── */
+
+function renderSweetSpot() {
+  const box = $("#ssBox");
+  if (!box) return;
+  const depth = +($("#depth").value || 40);
+  const rounds = state.rounds.filter((r) => r.sweet_spot != null).slice(0, depth);
+  if (!rounds.length) {
+    box.textContent = "Učitaj feed (tab „⚙️ Podaci & podešavanja”) — nema sweet spot podataka.";
+    return;
+  }
+  box.replaceChildren();
+
+  const counts = new Map();
+  for (const r of rounds) {
+    for (const x of [r.sweet_spot, r.sweet_spot2].filter((x) => x != null))
+      counts.set(x, (counts.get(x) || 0) + 1);
+  }
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+
+  const top = el("div", "balls");
+  for (const [num, c] of sorted.slice(0, 12)) {
+    const w = el("div", "pick");
+    w.appendChild(ballEl(num, { sm: true }));
+    w.appendChild(el("small", "muted", `${c}× (${Math.round((c / rounds.length) * 100)}%)`));
+    top.appendChild(w);
+  }
+  box.appendChild(el("div", null, `Najčešći sweet spot brojevi (zadnjih ${rounds.length} kola sa podacima):`));
+  box.appendChild(top);
+
+  let rep = 0;
+  for (let i = 0; i + 1 < rounds.length; i++) {
+    const a = [rounds[i].sweet_spot, rounds[i].sweet_spot2];
+    const b = [rounds[i + 1].sweet_spot, rounds[i + 1].sweet_spot2];
+    if (a.some((x) => x != null && b.includes(x))) rep++;
+  }
+  const note = el("div", "muted");
+  note.style.marginTop = "8px";
+  note.textContent =
+    `Sweet spot se ponovio iz kola u kolo: ${rep}/${Math.max(1, rounds.length - 1)} ` +
+    `(očekivano za 2 broja od 48: ~${((2 / 48) * 100).toFixed(1)}%). Zadnje kolo #${rounds[0].round_number}: ` +
+    `${rounds[0].sweet_spot}` + (rounds[0].sweet_spot2 != null ? ` i ${rounds[0].sweet_spot2}` : "") + ".";
+  box.appendChild(note);
+}
+
+/* ── Kalkulator isplate (vodič) ─────────────────────────────────────────── */
+
+function calcFairOdds(picks) {
+  // fer kvota da SVIH picks tipovanih brojeva bude među 35 od 48
+  return combinatorial(48, picks) / combinatorial(35, picks);
+}
+
+function renderCalc() {
+  const out = $("#calcOut");
+  if (!out) return;
+  const picks = Math.min(8, Math.max(1, +($("#calcPicks").value || 5)));
+  const odds = +($("#calcOdds").value || 0);
+  const stake = +($("#calcStake").value || 0);
+  const combos = Math.max(1, +($("#calcCombos").value || 1));
+  out.replaceChildren();
+
+  const totalStake = stake * combos;
+  const fair = calcFairOdds(picks);
+  const pWin = 1 / fair;
+  const hasOdds = odds > 0;
+  const ev = hasOdds ? (odds * pWin - 1) * totalStake : NaN;
+  const edge = hasOdds ? (odds / fair - 1) * 100 : NaN;
+
+  const kpi = (val, label, cls) => {
+    const d = el("div", "k");
+    d.appendChild(el("b", cls, val));
+    d.appendChild(el("span", null, label));
+    return d;
+  };
+
+  out.appendChild(kpi(`${(pWin * 100).toFixed(2)}%`, `šansa da svih ${picks} brojeva pogodi`));
+  out.appendChild(kpi(`×${fair.toFixed(2)}`, "fer kvota (35/48)"));
+  out.appendChild(kpi(`${totalStake.toFixed(2)} €`, `ukupan ulog (${combos} komb.)`));
+  out.appendChild(kpi(hasOdds ? `${(odds * totalStake).toFixed(2)} €` : "—", "isplata ako pogodiš"));
+  out.appendChild(kpi(hasOdds ? `${ev.toFixed(2)} €` : "—", "očekivana vrednost (EV) po tiketu", ev > 0 ? "ok" : "bad"));
+  out.appendChild(kpi(hasOdds ? `${edge.toFixed(1)}%` : "—", "kvota u odnosu na fer", edge >= 0 ? "ok" : "bad"));
 }
 
 function renderHeatmap(A) {
@@ -751,8 +838,12 @@ function init() {
   $("#chkNotify").addEventListener("change", async (e) => {
     if (e.target.checked) await ensureNotifyPermission();
   });
+  ["calcPicks", "calcOdds", "calcStake", "calcCombos"].forEach((id) => {
+    $("#" + id).addEventListener("input", renderCalc);
+  });
 
   renderAll();
+  renderCalc();
   if ($("#feedUrl").value) reloadFeed(true);
   setInterval(() => { if ($("#feedUrl").value) reloadFeed(true); }, 60_000);
 }

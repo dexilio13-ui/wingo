@@ -217,6 +217,22 @@
       </table></div>
     </div>
     <div class="card">
+      <h3>Sweet spot u realnim kolima <span class="muted" style="text-transform:none">— iz feed-a (zadnjih N kola)</span></h3>
+      <div id="ssBox" class="muted">Učitaj feed pa se statistika prikazuje automatski.</div>
+    </div>
+    <div class="card">
+      <h3>Kalkulator isplate</h3>
+      <div class="row">
+        <label>Tipovanih brojeva: <input type="number" id="calcPicks" min="1" max="8" value="5" style="width:64px"></label>
+        <label>Kvota ponude: <input type="number" id="calcOdds" step="0.01" min="0" value="4.50" style="width:80px"> (0 = prikaži samo matematiku)</label>
+        <label>Ulog po kombinaciji (€): <input type="number" id="calcStake" min="0" step="0.1" value="0.5" style="width:70px"></label>
+        <label>Kombinacija na tiketu: <input type="number" id="calcCombos" min="1" value="1" style="width:60px"></label>
+      </div>
+      <div id="calcOut" class="kpi" style="margin-top:10px"></div>
+      <p class="muted" style="font-size:12px;margin-bottom:0">Fer kvota = 1/šansa (sistem 35/48). EV &gt; 0 znači kvota ponude nadmašuje fer vrednost — u praksi praktično nikad, zato što je realna kvota 10–20% ispod fer. Služi za poređenje ponuda: igraj tip gde je kvota najbliža fer vrednosti.</p>
+      <p class="muted" style="font-size:12px;margin-bottom:0">Fer kvote po broju tipovanih: 1 → ×1,37 · 2 → ×1,90 · 3 → ×2,64 · 4 → ×3,72 · 5 → <b>×5,27</b> · 6 → ×7,56 · 7 → ×10,95 · 8 → ×16,02.</p>
+    </div>
+    <div class="card">
       <h3>Predlozi taktike</h3>
       <ul class="guide">
         <li><b>Glavni tip — drži konstantan set:</b> 6 brojeva, narednih 4–8 kola. Tab „🎯 Drži 6” vodi istoriju držanja i sprečava impulsne promene.</li>
