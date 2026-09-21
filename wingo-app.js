@@ -844,6 +844,13 @@ function init() {
 
   renderAll();
   renderCalc();
+
+  // otvori tab iz URL hash-a (npr. wingo.html#vodic)
+  const hash = location.hash.slice(1);
+  if (hash && document.getElementById("panel-" + hash)) {
+    document.querySelector(`.tab-btn[data-tab="${hash}"]`)?.click();
+  }
+
   if ($("#feedUrl").value) reloadFeed(true);
   setInterval(() => { if ($("#feedUrl").value) reloadFeed(true); }, 60_000);
 }
