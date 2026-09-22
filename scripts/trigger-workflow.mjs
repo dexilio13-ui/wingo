@@ -28,10 +28,19 @@ function getOwnerRepo() {
 }
 
 /** Uzme token iz Git Credential Manager-a (isti izvor koji koristi git push). */
+// Bez shell-a: execFileSync direktno piše u stdin, pa radi i u cmd.exe
+// (stara verzija je koristila `printf ... | git credential fill` kroz shell,
+//  a cmd.exe na Windows-u nema printf — zato je trigger padao iz BAT fajla).
 function getToken() {
-  const out = execSync(
-    'printf "protocol=https\\nhost=github.com\\n\\n" | git credential fill',
-    { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }
+  const out = execFileSync(
+    "git",
+    ["credential", "fill"],
+    {
+      input: "protocol=https\nhost=github.com\n\n",
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+      windowsHide: true,
+    }
   );
   const line = out.split("\n").find((l) => l.startsWith("password="));
   if (!line) throw new Error("Nema sačuvanog GitHub tokena — pokreni git push jednom ručno da se sačuva.");
@@ -90,7 +99,7 @@ async function main() {
   // 2) čekaj kraj najnovijeg run-a
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   await sleep(4000); // run se registruje sa malim zakašnjenjem
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 60; i++) { // 60 × 5 s = do 5 min čekanja
     try {
       const runsRes = curl({ url: `${API}/actions/runs?per_page=1`, token });
       const run = JSON.parse(runsRes.body).workflow_runs?.[0];
