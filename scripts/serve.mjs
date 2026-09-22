@@ -25,9 +25,11 @@ http
 
     // GET /trigger → pokreni GitHub Actions workflow (fetch-bingo) sa ovog računara.
     // Koristi se iz viewer-a: dugme „↻ Osveži” ga zove u pozadini.
+    // Opciono: /trigger?wait=1 → sačeka dok novo kolo stvarno ne stigne u JSON (max ~8 min).
     if (pathname === "/trigger") {
+      const wait = new URL(req.url, "http://x").searchParams.get("wait");
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-      res.end(JSON.stringify({ ok: true, hint: "workflow pokrenut" }));
+      res.end(JSON.stringify({ ok: true, hint: wait ? "workflow pokrenut, čekam novo kolo…" : "workflow pokrenut" }));
       import("node:child_process").then(({ spawn }) => {
         const child = spawn(process.execPath, [path.join(ROOT, "scripts", "trigger-workflow.mjs")], {
           cwd: ROOT,
@@ -36,6 +38,24 @@ http
         });
         child.unref();
       });
+      if (wait) {
+        // pozadi: poll lokalnog JSON-a dok se round_number ne poveća (novi podatak = novo kolo u feedu)
+        try {
+          const before = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "bingo-results.json"), "utf8"));
+          const lastNo = before.rounds?.[0]?.round_number ?? 0;
+          const started = Date.now();
+          const iv = setInterval(() => {
+            try {
+              const cur = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "bingo-results.json"), "utf8"));
+              const top = cur.rounds?.[0]?.round_number ?? 0;
+              if (top > lastNo || Date.now() - started > 8 * 60_000) {
+                clearInterval(iv);
+                console.log(`[trigger] novo kolo #${top} u JSON-u (ili timeout)`);
+              }
+          } catch { /* JSON se možda piše — probaj opet */ }
+          }, 15_000);
+        } catch { /* nema lokalnog JSON-a — ništa */ }
+      }
       return;
     }
 

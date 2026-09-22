@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Prati rezultate Volcanobet online bingo kola preko javnog SignalR feed-a i održava JSON sa zadnjih 40 kola",
+  "description": "Prati rezultate Volcanobet online bingo kola preko javnog SignalR feed-a i održava JSON sa zadnjih 120 kola",
   "scripts": {
     "fetch": "node scripts/fetch-bingo.mjs",
     "watch": "node scripts/fetch-bingo.mjs --watch",

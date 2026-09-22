@@ -9,10 +9,66 @@ const BALL_COLORS = ["purple","yellow","green","blue","red","brown","orange","bl
 const ballColor = (n) => BALL_COLORS[n % 8];
 const LIGHT = new Set(["yellow", "orange"]);
 
+/* ── Ritam izvlačenja (sa feeda: rhythm/estimate blokovi) ──────────────── */
+
+const CYCLE_MS = 228_000; // medijan 3 min 48 s po kolu (mereno iz feeda)
+const DEFAULT_RHYTHM = { median_ms: CYCLE_MS, p25_ms: CYCLE_MS, p75_ms: CYCLE_MS, cycle_label: "3 min 48 s", sample_gaps: 0 };
+
+function getRhythm() {
+  const r = state.feedInfo?.rhythm;
+  return (r && r.median_ms) ? r : DEFAULT_RHYTHM;
+}
+
+const fmtDur = (ms) => `${Math.floor(ms / 60_000)} min ${String(Math.round((ms % 60_000) / 1000)).padStart(2, "0")} s`;
+
+/** Vreme (s) do početka zadatog kola; negativno = kolo je već počelo/ranije. */
+function secondsToRound(targetRound, rhythm = getRhythm()) {
+  const last = state.rounds[0];
+  if (!last?.drawn_at) return null;
+  const med = rhythm.median_ms || CYCLE_MS;
+  const elapsedMs = Date.now() - new Date(last.drawn_at).getTime();
+  const roundsAhead = targetRound - last.round_number;
+  const eta = roundsAhead * med - elapsedMs;
+  return Math.round(eta / 1000);
+}
+
+/** Ljudski opis do zadatog kola + upozorenje ako je procenjeno vreme već isteklo. */
+function etaLabel(targetRound) {
+  const s = secondsToRound(targetRound);
+  if (s == null) return "vreme zadnjeg kola nije poznato";
+  if (s <= -120) return `procenjeno vreme je već prošlo (${fmtDur(-s * 1000)} ranije) — feed je verovatno zastareo, klikni „↻ Feed”`;
+  if (s <= 0) return `procenjeno vreme je već isteklo (${fmtDur(-s * 1000)} ranije) — proveri feed`;
+  return `za ~${fmtDur(s * 1000)}${s > 600 ? " (duži period — verovatno pauza/održavanje)" : ""}`;
+}
+
+/** Procena trenutnog kola (ritam). Server-side estimate sa feeda ima prednost. */
+function estimateCurrentRound() {
+  const est = state.feedInfo?.estimate;
+  if (est?.current_round_number) return est;
+  const last = state.rounds[0];
+  if (!last?.drawn_at) return null;
+  const med = getRhythm().median_ms || CYCLE_MS;
+  const elapsed = Date.now() - new Date(last.drawn_at).getTime();
+  const k = Math.max(0, Math.floor(elapsed / med));
+  return { current_round_number: last.round_number + k, next_round_number: last.round_number + k + 1,
+           seconds_to_next_start: Math.max(0, Math.round(((k + 1) * med - elapsed) / 1000)),
+           cycle_label: getRhythm().cycle_label, feed_age_seconds: null, stale: false, estimate: true };
+}
+
+/** Da li je kolo #no već (po proceni) izvučeno — koriguje „još N kola” kad feed kasni. */
+function roundProbablyDrawn(no) {
+  const est = estimateCurrentRound();
+  return est ? no <= est.current_round_number : false;
+}
+
 // Podrazumevani feed: live JSON iz ovog repoa (radi lokalno i na GitHub Pages-u).
 // Ne moraš ništa da kucaš ručno u „Podaci & podešavanja” — automatski se koristi.
 const DEFAULT_FEED_URL =
-  "https://raw.githubusercontent.com/dexilio13-ui/wingo/main/data/bingo-results.json";
+  "https://raw.githubusercontent.com/dexilio13-ui/wingo/refs/heads/main/data/bingo-results.json";
+
+// Ostalo u repo-u (za linkove u „Podaci & podešavanja”).
+const REPO = "dexilio13-ui/wingo";
+const WORKFLOW_FILE = "update-bingo.yml";
 
 const LS = {
   feedUrl: "wingo.feedUrl",
@@ -21,6 +77,7 @@ const LS = {
   held: "wingo.held",
   wheel: "wingo.wheel",
   seenRound: "wingo.seenRound",
+  ghToken: "wingo.ghToken",
 };
 
 const $ = (s) => document.querySelector(s);
@@ -146,18 +203,36 @@ function combinedScore(n, repeated, w) {
   return s;
 }
 
-/* ── Tabovi ─────────────────────────────────────────────────────────────── */
+/* ── Tabovi (sa istorijom: browser Back/Forward radi između tabova) ────── */
+
+function activateTab(name) {
+  const btn = document.querySelector(`.tab-btn[data-tab="${name}"]`);
+  if (!btn) return false;
+  document.querySelectorAll(".tab-btn").forEach((x) => x.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
+  btn.classList.add("active");
+  $("#panel-" + name).classList.add("active");
+  return true;
+}
 
 document.querySelectorAll(".tab-btn").forEach((b) => {
   b.addEventListener("click", () => {
-    document.querySelectorAll(".tab-btn").forEach((x) => x.classList.remove("active"));
-    document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
-    b.classList.add("active");
-    $("#panel-" + b.dataset.tab).classList.add("active");
+    if (!activateTab(b.dataset.tab)) return;
+    // zabeleži u istoriju browsera da ← Back prebacuje nazad na prethodni tab
+    const target = "#" + b.dataset.tab;
+    if (location.hash !== target) history.pushState({ tab: b.dataset.tab }, "", target);
   });
 });
 
-/* ── Feed ───────────────────────────────────────────────────────────────── */
+// Back/Forward dugme browsera (i ručna promena hash-a)
+function onHistoryNav() {
+  const name = location.hash.slice(1);
+  if (name && document.getElementById("panel-" + name)) activateTab(name);
+}
+window.addEventListener("popstate", onHistoryNav);
+window.addEventListener("hashchange", onHistoryNav);
+
+/* ── Feed (automatski) ──────────────────────────────────────────────────── */
 
 function applyFeedData(data) {
   if (data && Array.isArray(data.rounds)) {
@@ -167,7 +242,12 @@ function applyFeedData(data) {
         round_number: r.round_number, drawn_at: r.drawn_at, balls: r.balls,
         sweet_spot: r.sweet_spot ?? null, sweet_spot2: r.sweet_spot2 ?? null,
       }));
-    state.feedInfo = { updated_at: data.updated_at, source: data.source };
+    state.feedInfo = {
+      updated_at: data.updated_at,
+      source: data.source,
+      rhythm: data.rhythm || null,     // {median_ms, p25_ms, p75_ms, cycle_label, sample_gaps}
+      estimate: data.estimate || null, // {current_round_number, next_round_number, seconds_to_next_start, stale}
+    };
   }
   if (data && data.live_round && Array.isArray(data.live_round.balls)) {
     state.live = data.live_round;
@@ -175,14 +255,25 @@ function applyFeedData(data) {
   renderAll();
 }
 
-async function reloadFeed(silent) {
-  const url = $("#feedUrl").value.trim();
-  if (!url) { if (!silent) toast("Unesi feed URL u „Podaci & podešavanja”"); return; }
+/** Pokuša zadati URL; ako ne uspe, vrati se na lokalnu kopiju data/bingo-results.json. */
+async function fetchFeed(url) {
   try {
-    // cache-busting: radi i za GitHub Pages (CDN keš) i za raw.githubusercontent.com
     const res = await fetch(`${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
+    return await res.json();
+  } catch (e) {
+    if (url === DEFAULT_FEED_URL) throw e; // i lokalni fallback nije proban
+    console.warn("Feed URL ne radi (" + (e?.message || e) + "), probavam lokalnu kopiju…");
+    const res2 = await fetch(`data/bingo-results.json?t=${Date.now()}`, { cache: "no-store" });
+    if (!res2.ok) throw new Error("HTTP " + res2.status);
+    return await res2.json();
+  }
+}
+
+async function reloadFeed(silent) {
+  const url = $("#feedUrl").value.trim() || DEFAULT_FEED_URL;
+  try {
+    const data = await fetchFeed(url);
     applyFeedData(data);
     save(LS.feedUrl, url);
     const prev = load(LS.seenRound, 0);
@@ -195,13 +286,67 @@ async function reloadFeed(silent) {
   }
 }
 
+/* ── GitHub Action trigger (iz browsera) ────────────────────────────────── */
+
+function setActionStatus(text, cls) {
+  const elx = $("#actionStatus");
+  if (elx) { elx.textContent = text || ""; if (cls != null) elx.className = cls; }
+}
+
+/** Pokrene workflow "Update bingo results": preko GitHub API-ja (token iz localStorage)
+ *  ili preko lokalnog servera (npm run serve / START-ALL.bat → /trigger endpoint). */
+async function triggerAction(silent = true) {
+  const token = load(LS.ghToken, "");
+  if (token) {
+    try {
+      const res = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`, {
+        method: "POST",
+        headers: { "Authorization": "token " + token, "Accept": "application/vnd.github+json" },
+        body: JSON.stringify({ ref: "main", inputs: { quick: true } }),
+      });
+      if (res.status === 204 || res.ok) {
+        setActionStatus("GitHub Action pokrenut ✓ — svež feed stiže za ~1–2 min.", "ok");
+        return true;
+      }
+      setActionStatus(`Action dispatch nije prošao (HTTP ${res.status}) — proveri token (Actions: Write).`, "bad");
+    } catch (e) {
+      setActionStatus("Greška pri pozivu GitHub API-ja: " + (e?.message || e), "bad");
+    }
+  }
+  // fallback: lokalni server (radi samo ako je otvoreno preko npm run serve / START-ALL.bat)
+  try {
+    const r = await fetch("/trigger");
+    if (r.ok) {
+      setActionStatus("Lokalni triger pokrenut ✓ — svež feed stiže za ~1–2 min.", "ok");
+      return true;
+    }
+  } catch { /* nije lokalni server */ }
+  if (!silent) {
+    setActionStatus("Nije pokrenuto ništa: nema tokena niti lokalnog servera. Action i dalje radi sam na 5 min (cron).", "warn");
+  }
+  return false;
+}
+
+/** Dugme "↻ Feed" / "Generiši preporuku": triggeruj akciju → sačekaj → povuci svež feed. */
+async function refreshNow(btn) {
+  const old = btn?.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ osvežavam…"; }
+  setActionStatus("Pokrećem GitHub Action…", "warn");
+  const kicked = await triggerAction(true);
+  if (!kicked) setActionStatus("Samo osvežavam feed (Action radi sam na 5 min).", "muted");
+  await new Promise((r) => setTimeout(r, 8000)); // kratak predah da bot stigne da commituje
+  await reloadFeed(true);
+  if (btn) { btn.disabled = false; btn.textContent = old ?? "↻ Feed"; }
+}
+
 /* ── Istorija panel ─────────────────────────────────────────────────────── */
 
 function renderAll() {
   const uni = +($("#universe").value || 48);
-  const depth = +($("#depth").value || 40);
+  const depth = +($("#depth").value || 60);
   const rounds = allRounds();
   renderSweetSpot();
+  buildDashboard();
   if (!rounds.length) { $("#feedStatus").textContent = "feed: nema podataka"; return; }
 
   const A = analyze(rounds, uni, depth);
@@ -210,12 +355,116 @@ function renderAll() {
     `feed: ${A.use.length} kola` + (state.feedInfo?.updated_at ? ` · ažurirano ${state.feedInfo.updated_at.slice(11, 16)} UTC` : "");
   $("#lastRound").textContent = state.rounds[0] ? `zadnje kolo #${state.rounds[0].round_number}` : "";
 
+  renderRhythmBanner();
   renderLive();
   renderHeatmap(A);
   renderKpis(A);
   renderHistTable(A.use);
   renderHeld();
   renderWheelTracking();
+  renderAutoRec(A, rounds); // 🟢 početnička preporuka — automatski, bez klika
+}
+
+/* ── 🟢 Auto-preporuka za početnike (bez klika) ─────────────────────────────
+ * Čim feed stigne: iz zadnjih 120 kola izabere 6 brojeva (mix skor) i odmah
+ * izračuna wheel kombinacije (min. 6) koje pokrivaju SVU biricu sa cenom u din.
+ */
+function renderAutoRec(A, rounds) {
+  const box = $("#autoRecBody");
+  if (!box) return;
+  if (rounds.length < 3) {
+    box.textContent = "Treba bar 3 kola podataka — feed se još puni (automatski).";
+    return;
+  }
+
+  // 1) 6 brojeva: isti mix-skoring ko i glavna preporuka (frekvencija + gap + ponavljanja)
+  const pool = [...A.numbers];
+  for (const n of pool) n.score = combinedScore(n, A.repeated, getWeights());
+  pool.sort((a, b) => b.score - a.score);
+  const chosen = pool.slice(0, 6).map((n) => n.number).sort((a, b) => a - b);
+  const topRound = rounds[0].round_number;
+  const holdRounds = 4;
+
+  // 2) wheel: k=5, T=4 iz birice od tih 6 — pokriva SVAKU kombinaciju od 5 od tih 6 brojeva.
+  //    Ako se 4+ tvojih brojeva izvuče, bar jedna kombinacija ima 4 pogotka (delimična isplata).
+  const K = 5, T = 4;
+  let combos = greedyWheel(chosen, K, T);
+  if (!verifyGuarantee(chosen, combos, K, T)) {
+    if (!combos.length) combos = [chosen.slice(0, K)];
+  }
+  // dopuni na bar 6 JEDINSTVENIH kombinacija („minimum 6 — ništa ispod”): dodajemo
+  // one 5-podskupove birice koji još nisu u listi (C(6,5)=6, pa uvek može do 6)
+  const seen = new Set(combos.map((c) => c.join(",")));
+  const allK = [];
+  const cur = [];
+  const genK = (start) => {
+    if (cur.length === K) { allK.push([...cur]); return; }
+    for (let i = start; i < chosen.length - (K - cur.length) + 1; i++) { cur.push(chosen[i]); genK(i + 1); cur.pop(); }
+  };
+  genK(0);
+  for (const c of allK) {
+    if (combos.length >= 6) break;
+    const key = c.join(",");
+    if (!seen.has(key)) { combos.push(c); seen.add(key); }
+  }
+  const uniqueCombos = combos;
+
+  // 3) cena u dinarima (RSD) — ulog po kombinaciji, podrazumevano 20 din
+  const stake = Math.max(1, +($("#recStakeDin")?.value) || 20);
+  const total = uniqueCombos.length * stake;
+
+  box.replaceChildren();
+  const head = el("div", null);
+  head.innerHTML =
+    `<b>Drži ovih 6 brojeva narednih ${holdRounds} kola (do kola #${topRound + holdRounds}):</b> ` +
+    `<span class="muted">iz zadnjih ${A.use.length} kola — najjači mix skor (frekvencija + gap + ponavljanja).</span>`;
+  head.style.marginBottom = "8px";
+  box.appendChild(head);
+  box.appendChild(ballsRow(chosen, {}));
+
+  const w = el("div", null);
+  w.style.marginTop = "10px";
+  w.innerHTML =
+    `<b>🧩 Minimalne kombinacije koje pokrivaju sve:</b> ${uniqueCombos.length} × ${stake} din = <b>${total} din po kolu</b> ` +
+    `<span class="muted">(kombinacija ${K} brojeva iz tvojih 6; garancija: ako 4+ tvojih brojeva izvuče, bar jedna kombinacija ima 4 pogotka — provereno računski ✓)</span>`;
+  box.appendChild(w);
+  const list = el("div", "combo-list");
+  list.style.marginTop = "6px";
+  uniqueCombos.forEach((c) => {
+    const d = el("div", "combo");
+    d.appendChild(ballsRow(c, { sm: true }));
+    list.appendChild(d);
+  });
+  box.appendChild(list);
+
+  const note = el("div", "rec-note");
+  note.innerHTML =
+    `Klikni 📌 da ovo držanje pratimo za tebe (pogotci se sami računaju po novim kolima). ` +
+    `Cena se menja sa ulogom: `;
+  const stakeInput = el("input");
+  stakeInput.type = "number"; stakeInput.min = "1"; stakeInput.value = String(stake); stakeInput.style.width = "64px";
+  stakeInput.id = "recStakeDin";
+  stakeInput.addEventListener("change", renderAutoRecRefresh);
+  note.appendChild(stakeInput);
+  note.appendChild(document.createTextNode(" din po kombinaciji (min. 6 kombinacija — ništa ispod toga)."));
+  box.appendChild(note);
+
+  const holdBtn = el("button", "primary", "📌 Drži ovu preporuku");
+  holdBtn.style.marginTop = "8px";
+  holdBtn.addEventListener("click", () => {
+    holdPick({
+      numbers: chosen, from_round: topRound, until_round: topRound + holdRounds,
+      rounds_left: holdRounds, mode: "mix-auto", created_at: new Date().toISOString(), hits: [],
+    });
+  });
+  box.appendChild(holdBtn);
+}
+
+function renderAutoRecRefresh() {
+  const uni = +($("#universe").value || 48);
+  const depth = +($("#depth").value || 60);
+  const rounds = allRounds();
+  if (rounds.length >= 3) renderAutoRec(analyze(rounds, uni, depth), rounds);
 }
 
 function allRounds() {
@@ -242,10 +491,10 @@ function renderLive() {
 function renderSweetSpot() {
   const box = $("#ssBox");
   if (!box) return;
-  const depth = +($("#depth").value || 40);
+  const depth = +($("#depth").value || 60);
   const rounds = state.rounds.filter((r) => r.sweet_spot != null).slice(0, depth);
   if (!rounds.length) {
-    box.textContent = "Učitaj feed (tab „⚙️ Podaci & podešavanja”) — nema sweet spot podataka.";
+    box.textContent = "Učitaj feed — nema sweet spot podataka.";
     return;
   }
   box.replaceChildren();
@@ -257,8 +506,8 @@ function renderSweetSpot() {
   }
   const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]);
 
-  const top = el("div", "balls");
-  for (const [num, c] of sorted.slice(0, 12)) {
+  const top = el("div", "pick-grid");
+  for (const [num, c] of sorted.slice(0, 6)) {
     const w = el("div", "pick");
     w.appendChild(ballEl(num, { sm: true }));
     w.appendChild(el("small", "muted", `${c}× (${Math.round((c / rounds.length) * 100)}%)`));
@@ -395,7 +644,7 @@ function renderHistTable(use) {
   thead.innerHTML = "<tr><th>#</th><th>Vreme</th><th>Brojevi (redosled izvlačenja)</th></tr>";
   t.appendChild(thead);
   const tb = el("tbody");
-  for (const r of use.slice(0, 40)) {
+  for (const r of use.slice(0, 120)) {
     const tr = el("tr");
     tr.appendChild(el("td", null, "#" + r.round_number));
     tr.appendChild(el("td", "muted", r.drawn_at ? r.drawn_at.slice(11, 19) : "—"));
@@ -413,7 +662,7 @@ function generatePicks(reroll) {
   const rounds = allRounds();
   if (rounds.length < 3) { toast("Treba bar 3 kola (feed ili ručni unos)"); return; }
   const uni = +($("#universe").value || 48);
-  const depth = +($("#depth").value || 40);
+  const depth = +($("#depth").value || 60);
   const count = Math.max(3, Math.min(12, +($("#holdCount").value || 6)));
   const holdRounds = Math.max(1, Math.min(8, +($("#holdRounds").value || 4)));
   const mode = $("#poolMode").value;
@@ -486,6 +735,7 @@ function holdPick(pick) {
   held.unshift(pick);
   save(LS.held, held);
   renderHeld();
+  buildDashboard();
   toast("Držanje aktivirano ✓");
 }
 
@@ -506,8 +756,10 @@ function renderHeld() {
 
   let anyActive = false;
   held.forEach((h, i) => {
+    // korekcija za kašnjenje feeda: ako je ritmu kolo već počelo/izvuklo, ne uračunavaj ga u „preostala”
+    const overdue = roundProbablyDrawn(h.until_round);
     h.rounds_left = Math.max(0, h.until_round - top);
-    const active = h.rounds_left > 0;
+    const active = h.rounds_left > 0 || overdue;
     if (active) anyActive = true;
 
     const row = el("div", "card");
@@ -516,7 +768,11 @@ function renderHeld() {
     const head = el("div", "row");
     head.appendChild(el("b", null, `Brojevi (${h.numbers.length})`));
     head.appendChild(el("span", active ? "ok" : "muted",
-      active ? `važi još ${h.rounds_left} kola (do #${h.until_round})` : "isteklo"));
+      active
+        ? (h.rounds_left > 0
+            ? `važi još ${h.rounds_left} kola (do #${h.until_round}) — ${etaLabel(h.until_round)}`
+            : `po ritmu je isteklo (do #${h.until_round}), ali feed još ne potvrđuje — proveri „↻ Feed”`)
+        : "isteklo"));
     head.appendChild(el("span", "muted", `· od kola #${h.from_round} · mod: ${h.mode}`));
     const hitInfo = h.hits.length
       ? `pogodci po kolima: ${h.hits.map((x) => `#${x.round}:${x.hits}`).join(", ")}`
@@ -531,6 +787,7 @@ function renderHeld() {
       held.splice(i, 1);
       save(LS.held, held);
       renderHeld();
+      buildDashboard();
     });
     row.appendChild(del);
     if (active) box.appendChild(row);
@@ -631,15 +888,19 @@ function runWheel() {
   if (!tSel) { out.innerHTML = '<span class="bad">Izaberi garanciju T.</span>'; return; }
   const t = Math.min(k, +tSel);
 
-  // brzina: limitiraj složene slučajeve
+  // brzina: limitiraj složene slučajeve (i t-subsets za proveru, i k-subsets za greedy pretragu —
+  // greedy petlja je O(kSets × tSets) po iteraciji, pa oba moraju biti ograničena)
   const tCount = combinatorial(uniq.length, t);
-  if (tCount > 30000) {
-    out.innerHTML = `<span class="bad">Previše kombinacija za proveru (C(${uniq.length},${t})=${tCount}). Smanji biricu ili T.</span>`;
+  const kCount = combinatorial(uniq.length, k);
+  if (tCount > 30000 || kCount > 5000) {
+    out.innerHTML = `<span class="bad">Previše kombinacija za proveru (C(${uniq.length},${t})=${tCount}, C(${uniq.length},${k})=${kCount}). Smanji biricu ili T.</span>`;
     return;
   }
 
+  const t0 = Date.now();
   const combos = greedyWheel(uniq, k, t);
   const guaranteed = verifyGuarantee(uniq, combos, k, t);
+  const timedOut = !guaranteed && (Date.now() - t0) > 24_000;
   const payin = Math.max(1, +$("#wheelPayin").value || 20);
 
   state.wheelResult = { pool: uniq, k, t, combos, payin, created_round: allRounds()[0]?.round_number ?? 0, hits: [] };
@@ -649,7 +910,11 @@ function runWheel() {
   const sum = el("div", null);
   sum.innerHTML =
     `<b>${combos.length}</b> kombinacija ${k}/${uniq.length} · garancija: ako ${t}+ iz birice izađe, bar jedna kombinacija ima ${t} pogodaka — ` +
-    (guaranteed ? '<span class="ok">provereno ✓</span>' : '<span class="bad">NIJE provereno ✗</span>') +
+    (guaranteed
+      ? '<span class="ok">provereno ✓</span>'
+      : timedOut
+        ? '<span class="bad">NIJE provereno ✗ (pretraga je prekinuta zbog vremena — smanji biricu ili T i pokušaj ponovo)</span>'
+        : '<span class="bad">NIJE provereno ✗</span>') +
     ` · ukupan ulog: <b>${combos.length * payin}</b>`;
   out.appendChild(sum);
 
@@ -661,6 +926,7 @@ function runWheel() {
   });
   out.appendChild(list);
   renderWheelTracking();
+  buildDashboard();
 }
 
 function renderWheelTracking() {
@@ -686,6 +952,268 @@ function renderWheelTracking() {
       `najbolja kombinacija: ${best}/${w.k} pogodaka${best >= w.t ? " — GARANCIJA ISPORUČENA ✓" : ""}`));
     box.appendChild(row);
   }
+}
+
+/* ── Banner ritma: trajanje kola + odbrojavanje + svežina feeda ────────── */
+
+function renderRhythmBanner() {
+  const box = $("#rhythmBanner");
+  if (!box) return;
+  const rhythm = getRhythm();
+  const est = estimateCurrentRound();
+  box.replaceChildren();
+  if (!est) {
+    box.textContent = "Ritam izvlačenja: — (treba bar jedno kolo sa vremenom iz feeda).";
+    return;
+  }
+  const age = est.feed_age_seconds;
+  const nextEta = fmtDur((est.seconds_to_next_start ?? 0) * 1000);
+  const ageTxt = age != null ? (age < 90 ? "feed svež" : `feed star ${fmtDur(age * 1000)}`) : "";
+  const staleTxt = est.stale || (age != null && age > 10 * 60)
+    ? ' — <span class="warn">feed možda zastareo (cron prospio?) → „↻ Feed”</span>' : "";
+  const d = el("div");
+  d.innerHTML =
+    `<b>⏱ Ritam:</b> prosečno kolo traje <b>${rhythm.cycle_label || fmtDur(rhythm.median_ms)}</b>` +
+    (rhythm.sample_gaps ? ` (mereno na ${rhythm.sample_gaps} razmaka)` : " (podrazumevano)") +
+    ` · <b>kolo #${est.current_round_number}</b> bi trebalo da je u toku` +
+    ` · sledeće <b>#${est.next_round_number}</b> okvirno za ~${nextEta}` + staleTxt +
+    (ageTxt ? ` · ${ageTxt}` : "");
+  box.appendChild(d);
+  if (rhythm.p25_ms && rhythm.p75_ms) {
+    box.appendChild(el("div", "muted", `raspon (p25–p75): ${fmtDur(rhythm.p25_ms)} – ${fmtDur(rhythm.p75_ms)} — retke duže pauze su održavanje, ne novi ritam.`));
+  }
+}
+
+/* ── ⚡ Preporuka: sve u jednom ─────────────────────────────────────────── */
+
+function fillRecTOptions() {
+  const k = +($("#recK").value || 6);
+  const sel = $("#recT");
+  sel.replaceChildren();
+  for (let t = k; t >= Math.max(2, k - 2); t--) {
+    const o = document.createElement("option");
+    o.value = String(t);
+    o.textContent = `T=${t}`;
+    sel.appendChild(o);
+  }
+  sel.value = String(Math.max(2, k - 1));
+}
+
+function recSection(title, noteText, noteClass) {
+  const sec = el("div", "rec-section");
+  sec.appendChild(el("h4", null, title));
+  if (noteText) {
+    const n = el("div", noteClass || "rec-note");
+    n.textContent = noteText;
+    sec.appendChild(n);
+  }
+  return sec;
+}
+
+/** Glavno dugme „Generiši preporuku”: brojevi + boje + broj kola + wheel + ostali tipovi. */
+function generateAllRecs(reroll) {
+  const out = $("#allOut");
+  const rounds = allRounds();
+  if (rounds.length < 3) {
+    out.replaceChildren();
+    out.appendChild(el("div", "bad", "Treba bar 3 kola podataka — sačekaj da feed učita (automatski) ili unesi kola ručno u „Podaci & podešavanja”."));
+    return;
+  }
+
+  const uni = +($("#universe").value || 48);
+  const depth = +($("#depth").value || 60);
+  const count = Math.max(3, Math.min(12, +($("#recCount").value || 6)));
+  const holdRounds = Math.max(1, Math.min(8, +($("#recRounds").value || 4)));
+  const k = Math.max(2, Math.min(8, +($("#recK").value || 6)));
+  let t = +($("#recT").value || (k - 1));
+  t = Math.min(k, Math.max(2, t));
+  const stake = Math.max(0.1, +($("#recStake").value || 0.5));
+  const budget = Math.max(1, +($("#recBudget").value || 10));
+
+  const A = analyze(rounds, uni, depth);
+  const w = getWeights();
+  const topRound = rounds[0].round_number;
+  const est = estimateCurrentRound(); // ritam: koje kolo je verovatno u toku + ETA sledećeg
+
+  // ── 1) Brojevi: mix skor (frekvencija + gap + ponavljanja) ──
+  const pool = [...A.numbers];
+  for (const n of pool) n.score = combinedScore(n, A.repeated, w);
+  pool.sort((a, b) => b.score - a.score);
+  let chosen = (reroll
+    ? [...pool.slice(0, Math.max(count * 2, 12))].sort(() => Math.random() - 0.5).slice(0, count)
+    : pool.slice(0, count)
+  ).map((n) => n.number);
+  chosen = [...new Set(chosen)].sort((a, b) => a - b);
+
+  // ── 2) Boje: izabrani brojevi + najjače boje perioda ──
+  const colorCount = new Map();
+  for (const n of chosen) colorCount.set(ballColor(n), (colorCount.get(ballColor(n)) || 0) + 1);
+  const topColors = [...colorCount.entries()].sort((a, b) => b[1] - a[1]);
+
+  // ── 3) Wheel kombinacije iz izabranih brojeva (birica) ──
+  let combos = [], guaranteed = false, wheelNote = "";
+  const poolCount = chosen.length;
+  if (poolCount >= k) {
+    const tCount = combinatorial(poolCount, t);
+    if (tCount <= 30000) {
+      combos = greedyWheel(chosen, k, t);
+      guaranteed = verifyGuarantee(chosen, combos, k, t);
+      if (!combos.length) { combos = [chosen.slice(0, k)]; guaranteed = false; }
+    } else {
+      wheelNote = `Birica ${poolCount} je prevelika za T=${t} (C(${poolCount},${t})=${tCount}) — smanji k ili T.`;
+    }
+  } else {
+    wheelNote = `Za wheel treba birica ≥ k (${k}). Povećaj „Brojeva držim” na bar ${k}.`;
+  }
+
+  // ── 4) Ostali tipovi ──
+  const lastBallTop = pool.slice(0, 3).map((n) => n.number);
+  const ssTop = (() => {
+    const counts = new Map();
+    for (const r of state.rounds.filter((r) => r.sweet_spot != null).slice(0, depth))
+      for (const x of [r.sweet_spot, r.sweet_spot2].filter((x) => x != null))
+        counts.set(x, (counts.get(x) || 0) + 1);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2).map((e) => e[0]);
+  })();
+  const ffTop = pool.slice(0, 2).map((n) => n.number);
+
+  // ── render ──
+  out.replaceChildren();
+  out.appendChild(el("div", null,
+    `Osnova: zadnjih ${A.use.length} kola (zadnje #${topRound}) · drži ovih ${count} brojeva narednih ${holdRounds} kola (do kola #${topRound + holdRounds}).`));
+
+  // 1. brojevi
+  const sec1 = recSection(`1 · Brojevi za držanje (${count}) — glavni tip`,
+    `Važi do kola #${topRound + holdRounds} — ${etaLabel(topRound + holdRounds)}.` + (reroll ? " Varijanta 🎲 — iz istog top-pool-a, drugačiji raspored." : ""));
+  sec1.appendChild(ballsRow(chosen, {}));
+  sec1.appendChild(el("div", "rec-note",
+    "Izbor: " + explainPick(chosen, A, "mix")));
+  const holdBtn = el("button", "primary", "📌 Drži ovu kombinaciju");
+  holdBtn.style.marginTop = "8px";
+  holdBtn.addEventListener("click", () => {
+    holdPick({
+      numbers: chosen, from_round: topRound, until_round: topRound + holdRounds,
+      rounds_left: holdRounds, mode: "mix", created_at: new Date().toISOString(), hits: [],
+    });
+  });
+  sec1.appendChild(holdBtn);
+  out.appendChild(sec1);
+
+  // 2. boje
+  const sec2 = recSection("2 · Boje — na šta da računaš");
+  const cRow = el("div", "row");
+  cRow.appendChild(el("span", "muted", "u tvojim brojevima:"));
+  topColors.forEach(([c, n]) => {
+    const tag = el("span", "tag", `${c} ×${n}`);
+    tag.style.borderColor = `var(--c-${c})`;
+    tag.style.color = `var(--c-${c})`;
+    cRow.appendChild(tag);
+  });
+  sec2.appendChild(cRow);
+  const cAll = el("div", "row");
+  cAll.style.marginTop = "6px";
+  cAll.appendChild(el("span", "muted", "najjače boje perioda:"));
+  [...BALL_COLORS].sort((a, b) => A.colors[b] - A.colors[a]).slice(0, 3).forEach((c) => {
+    const tag = el("span", "tag", `${c} (${A.colors[c]})`);
+    tag.style.borderColor = `var(--c-${c})`;
+    tag.style.color = `var(--c-${c})`;
+    cAll.appendChild(tag);
+  });
+  sec2.appendChild(cAll);
+  sec2.appendChild(el("div", "rec-note",
+    "Boja lopte je deterministička (broj % 8) — ni ovde nema predskazanja; ovo ti je orijentacija kako izgleda raspored. U vodiču je tabela i za sweet spot / jackpot."));
+  out.appendChild(sec2);
+
+  // 3. wheel kombinacije
+  const totalWheel = combos.length * stake;
+  const sec3 = recSection(`3 · Kombinacije sa malim ulogom (wheel ${k} iz birice ${poolCount}, T=${t})`);
+  if (combos.length) {
+    sec3.appendChild(el("div", null,
+      `${combos.length} kombinacija × ${stake.toFixed(2)} € = ukupno ${totalWheel.toFixed(2)} € po kolu` +
+      (guaranteed ? " · garancija proverena ✓" : " · garancija NIJE proverena ✗")));
+    const list = el("div", "combo-list");
+    combos.forEach((c) => {
+      const d = el("div", "combo" + (guaranteed ? " best" : ""));
+      d.appendChild(ballsRow(c, { sm: true }));
+      list.appendChild(d);
+    });
+    sec3.appendChild(list);
+  sec3.appendChild(el("div", "rec-note",
+    `Ako ${t}+ broja iz birice izađe u kolu, bar jedna kombinacija ima ${t} pogodaka (delimična isplata po kvotniku). ` +
+    `Budžet sesije ${budget.toFixed(2)} € ≈ ${Math.floor(budget / Math.max(totalWheel, 0.005))} kola wheel-a` +
+    (est?.seconds_to_next_start != null ? ` · do sledećeg kola ~${fmtDur(est.seconds_to_next_start * 1000)} — tikete plasiraj pre isteka` : "") + "."));
+  } else {
+    sec3.appendChild(el("div", "warn", wheelNote || "Nema kombinacija za zadate parametre."));
+  }
+  out.appendChild(sec3);
+
+  // 4. ostali tipovi
+  const sec4 = recSection("4 · Ostali tipovi — samo mali odvojeni ulozi (0,50–1 €)");
+  const ul = el("ul", "guide");
+  const li = (html) => { const x = el("li"); x.innerHTML = html; ul.appendChild(x); };
+  li(`<b>Poslednja lopta:</b> kandidati ${lastBallTop.join(" / ")} — fer kvota ×48, čisto mali ulog za bonus.`);
+  li(`<b>Sweet spot:</b> kandidati ${ssTop.length ? ssTop.join(" / ") : "—"} (najčešći sweet spot brojevi perioda) — fer kvota ≈ ×24.`);
+  li(`<b>Prvih 5:</b> kandidati ${ffTop.join(" / ")} — fer kvota ×9,6 po broju; velika varijansa, igraj najmanje.`);
+  li(`<b>Jackpot:</b> dolazi uz tiket — ne plaćaj ništa dodatno.`);
+  sec4.appendChild(ul);
+  out.appendChild(sec4);
+
+  // 5. plan sesije
+  const planStake = totalWheel + stake + 1.5; // wheel + glavni tiket + okvirno ~1,5 € za sporedne tipove
+  const sec5 = recSection("5 · Plan sesije", null);
+  sec5.appendChild(el("div", "rec-note",
+    `Okvirna potrošnja po kolu: wheel ${totalWheel.toFixed(2)} € + glavni tiket ${stake.toFixed(2)} € + sporedni tipovi ~1,50 € ` +
+    `≈ ${planStake.toFixed(2)} €. Sa budžetom ${budget.toFixed(2)} € to je ~${Math.max(1, Math.floor(budget / planStake))} kola. ` +
+    `Drži brojeva ${holdRounds} kola — ne menjaj set posle jednog lošeg kola (zato postoji „📌 Drži”). ` +
+    `Ako je kolo Gold/Back-up (zlatni/zelena ekran), to je prirodni pokrića period — ne diži ulog.`));
+  out.appendChild(sec5);
+
+  buildDashboard();
+}
+
+/** Kontrolna tabla: aktivno držanje + wheel set + šta prati dalje (automatski). */
+function buildDashboard() {
+  const box = $("#dashBox");
+  if (!box) return;
+  const held = load(LS.held, []);
+  const wheel = load(LS.wheel, null);
+  const rounds = allRounds();
+  const top = rounds[0]?.round_number ?? 0;
+
+  if (!held.length && !wheel?.combos?.length) {
+    box.textContent = "Još ništa ne pratiš — klikni „Generiši preporuku” pa „📌 Drži ovu kombinaciju”.";
+    return;
+  }
+  box.replaceChildren();
+  const esc = (s) => String(s).replace(/[&<>\"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  for (const h of held.filter((h) => h.until_round > top)) {
+    const drawn = rounds[0]?.balls ?? [];
+    const hits = drawn.filter((n) => h.numbers.includes(n)).length;
+    const d = el("div", "rec-section");
+    d.innerHTML =
+      `<b>📌 Držanje</b> (${h.numbers.length} brojeva, još ${h.until_round - top} kola, do #${h.until_round}) — ` +
+      `u zadnjem kolu: <span class="${hits >= 3 ? "ok" : "muted"}">${hits}/${h.numbers.length} pogodaka</span>`;
+    d.appendChild(ballsRow(h.numbers, { sm: true }));
+    box.appendChild(d);
+  }
+  if (wheel?.combos?.length) {
+    const drawn = rounds[0]?.balls ?? [];
+    const drawnSet = new Set(drawn);
+    const best = Math.max(...wheel.combos.map((c) => hitsOf(c, drawnSet)));
+    const d = el("div", "rec-section");
+    d.innerHTML =
+      `<b>🧩 Wheel set</b> (${wheel.combos.length} komb. ${wheel.k}/${wheel.pool.length}, T=${wheel.t}) — ` +
+      `u zadnjem kolu: <span class="${best >= wheel.t ? "ok" : "muted"}">najbolja ${best}/${wheel.k}</span>` +
+      (best >= wheel.t ? ' <span class="ok">— garancija isporučena ✓</span>' : "");
+    d.appendChild(el("div", "rec-note", `Ukupan ulog po kolu: ${(wheel.combos.length * wheel.payin).toFixed(2)} €`));
+    box.appendChild(d);
+  }
+  const dashEst = estimateCurrentRound();
+  box.appendChild(el("div", "rec-note",
+    `Feed se osvežava automatski na 60 s; pogotci se sami ažuriraju. ` +
+    (dashEst ? `Po ritmu (${dashEst.cycle_label}) kolo #${dashEst.current_round_number} je u toku; sledeće #${dashEst.next_round_number} za ~${fmtDur((dashEst.seconds_to_next_start ?? 0) * 1000)}. ` : "") +
+    `Zadnje kolo u feedu: #${top}.`));
 }
 
 /* ── Selekcija (toplotna mapa → birica) ─────────────────────────────────── */
@@ -769,7 +1297,11 @@ function exportState() {
 function fillWheelTOptions() {
   const k = +$("#wheelK").value;
   const sel = $("#wheelT");
-  sel.replaceChildren(el("option", { value: "" }, "— izaberi —"));
+  sel.replaceChildren();
+  const empty = document.createElement("option");
+  empty.value = "";
+  empty.textContent = "— izaberi —";
+  sel.appendChild(empty);
   for (let t = k; t >= Math.max(2, k - 3); t--) {
     const o = document.createElement("option");
     o.value = String(t);
@@ -802,19 +1334,37 @@ function init() {
   initSettings();
   $("#feedUrl").value = load(LS.feedUrl, DEFAULT_FEED_URL);
   fillWheelTOptions();
+  fillRecTOptions();
 
-  $("#btnReloadFeed").addEventListener("click", async () => {
-    // 1) odmah osveži lokalno (iz cache-busted feed-a),
-    await reloadFeed(false);
-    // 2) pa u pozadini triggeruj GitHub Action da bot povuče i najnovije kolo
-    //    (odgovor stiže kroz ~1–2 min kroz automatski reload na 60 s)
+  $("#btnReloadFeed").addEventListener("click", (e) => refreshNow(e.currentTarget));
+  // „🏠 Početna\”: uvek vraća na početnu stranu (viewer) + prvi tab ovde za sledeći put
+  $("#btnHome").addEventListener("click", () => {
     try {
-      const r = await fetch("http://localhost:3333/trigger");
-      if (r.ok) toast("GitHub Action pokrenut — feed stiže za ~1–2 min");
-    } catch { /* lokalni agent nije aktivan — feed se ionako osvežava na 60 s */ }
-    renderAll();
+      if (history.state?.fromIndex) { history.back(); activateTab("preporuka"); }
+      else location.href = "index.html"; // direktno otvoren wingo.html → idi na viewer
+    } catch { location.href = "index.html"; }
+  });
+  // „← Nazad": vraća kroz istoriju (tab u app-u → prethodni tab → index strana)
+  $("#btnBack").addEventListener("click", (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    let done = false;
+    const finish = () => { if (!done) { done = true; btn.disabled = false; } };
+    window.addEventListener("popstate", finish, { once: true });
+    setTimeout(finish, 250); // ako nema zabeležene istorije, samo vrati dugme
+    history.back();
   });
   $("#btnSaveUrl").addEventListener("click", () => reloadFeed(false));
+  $("#btnDefaultUrl").addEventListener("click", () => {
+    $("#feedUrl").value = DEFAULT_FEED_URL;
+    save(LS.feedUrl, DEFAULT_FEED_URL);
+    reloadFeed(false);
+  });
+  $("#ghToken").value = load(LS.ghToken, "");
+  $("#ghToken").addEventListener("change", (e) => {
+    save(LS.ghToken, e.target.value.trim());
+    toast(e.target.value.trim() ? "Token sačuvan ✓ (samo lokalno)" : "Token obrisan");
+  });
   $("#btnAddManual").addEventListener("click", addManualRound);
   $("#btnImport").addEventListener("click", importJson);
   $("#btnExport").addEventListener("click", exportState);
@@ -827,6 +1377,9 @@ function init() {
   });
   $("#btnGenPicks").addEventListener("click", () => generatePicks(false));
   $("#btnReroll").addEventListener("click", () => generatePicks(true));
+  $("#btnGenAll").addEventListener("click", (e) => refreshNow(e.currentTarget).then(() => generateAllRecs(false)));
+  $("#btnRecReroll").addEventListener("click", () => generateAllRecs(true));
+  $("#recK").addEventListener("change", fillRecTOptions);
   $("#btnPoolFromPicks").addEventListener("click", () => {
     const held = load(LS.held, [])[0];
     if (held) $("#wheelPool").value = held.numbers.join(", ");
@@ -863,7 +1416,8 @@ function init() {
   // otvori tab iz URL hash-a (npr. wingo.html#vodic)
   const hash = location.hash.slice(1);
   if (hash && document.getElementById("panel-" + hash)) {
-    document.querySelector(`.tab-btn[data-tab="${hash}"]`)?.click();
+    activateTab(hash);
+    history.replaceState({ tab: hash }, "", "#" + hash); // bez duplog unosa u istoriji
   }
 
   if ($("#feedUrl").value) reloadFeed(true);

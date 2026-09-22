@@ -3,6 +3,10 @@ npm-debug.log*
 .DS_Store
 *.local
 
+# duža istorija (preko 60 kola) — sporedni artefakt, regenerate-uje je skripta
+data/bingo-history.json
+.tmp-*
+
 # screenshot artefakti
 wingo-mobile.png
 wingo-mobile-full.png

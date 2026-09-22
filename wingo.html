@@ -30,7 +30,7 @@
   .card h3 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
   .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   label { font-size: 12.5px; color: var(--muted); }
-  input[type=text], input[type=number], input[type=url], select, textarea {
+  input[type=text], input[type=number], input[type=url], input[type=password], select, textarea {
     background: #10131a; border: 1px solid var(--card-border); color: var(--text);
     border-radius: 8px; padding: 7px 9px; font-size: 13px; }
   textarea { width: 100%; min-height: 90px; font-family: ui-monospace, Consolas, monospace; }
@@ -82,6 +82,12 @@
   .guide li { margin-bottom: 4px; }
   .guide-table th, .guide-table td { font-size: 12px; }
   .guide-table td b { color: var(--accent); }
+  /* ── Preporuka (jedno dugme) ── */
+  .rec-section { background: #10131a; border: 1px solid var(--card-border); border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
+  .rec-section h4 { margin: 0 0 8px; font-size: 13.5px; }
+  .rec-note { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.55; }
+  .hero-btn { font-size: 16px; padding: 12px 26px; border-radius: 12px; }
+  #allStatus { font-size: 12.5px; }
 </style>
 </head>
 <body>
@@ -89,6 +95,8 @@
 <header>
   <h1>🎯 Wingo <small>— bingo taktika</small></h1>
   <div class="meta">
+    <button id="btnHome" class="small" title="Početna strana (viewer zadnjih 120 kola)">🏠 Početna</button>
+    <button id="btnBack" class="small" title="Nazad na prethodnu stranu/tab (Alt+←)">← Nazad</button>
     <span id="feedStatus">feed: nije učitan</span>
     <span id="lastRound"></span>
     <button id="btnReloadFeed" class="small">↻ Feed</button>
@@ -96,16 +104,51 @@
 </header>
 
 <main>
+  <div id="rhythmBanner" class="card" style="padding:8px 14px;font-size:12.5px"></div>
   <div class="tabs">
-    <button class="tab-btn active" data-tab="istorija">Istorija & toploga</button>
+    <button class="tab-btn active" data-tab="preporuka">⚡ Preporuka (1 klik)</button>
+    <button class="tab-btn" data-tab="istorija">Istorija & toploga</button>
     <button class="tab-btn" data-tab="drzi">🎯 Drži 6</button>
     <button class="tab-btn" data-tab="wheel">🧩 Kombinacije (wheel)</button>
     <button class="tab-btn" data-tab="vodic">📖 Pravila & taktika</button>
     <button class="tab-btn" data-tab="podesavanja">⚙️ Podaci & podešavanja</button>
   </div>
 
+  <!-- ═══ PREPORUKA (sve u jednom) ═══ -->
+  <section id="panel-preporuka" class="panel active">
+    <div class="card">
+      <h3>Jedno dugme — kompletna preporuka</h3>
+      <div class="row">
+        <button id="btnGenAll" class="primary hero-btn">🎲 Generiši preporuku</button>
+        <button id="btnRecReroll" class="hero-btn">Varijanta 🎲</button>
+        <span id="allStatus" class="muted">Feed se osvežava sam na 60 s (dugme „↻ Feed” gore pokreće i GitHub Action).</span>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <label>Brojeva držim: <input type="number" id="recCount" min="3" max="12" value="6" style="width:60px"></label>
+        <label>Koliko kola držim: <input type="number" id="recRounds" min="1" max="8" value="4" style="width:56px"></label>
+        <label>Kombinacija k: <select id="recK"><option>3</option><option>4</option><option>5</option><option selected>6</option></select></label>
+        <label>Garancija T: <select id="recT"></select></label>
+        <label>Ulog po tiketu (€): <input type="number" id="recStake" min="0.1" step="0.1" value="0.5" style="width:70px"></label>
+        <label>Budžet sesije (€): <input type="number" id="recBudget" min="1" step="0.5" value="10" style="width:70px"></label>
+      </div>
+      <!-- 🟢 AUTO-BLOK: početnička preporuka bez ikakvog klika -->
+      <div id="autoRec" class="rec-section" style="margin-top:12px">
+        <h4>🟢 Početnička preporuka (automatski — zadnjih 120 kola)</h4>
+        <div class="muted" style="margin:6px 0">Feed se učitava… čim stigne, ovde se same pojavljuju <b>6 brojeva</b> koje treba da držiš i <b>spremne kombinacije</b> sa cenom u dinarima.</div>
+        <div id="autoRecBody" class="muted">— čekam podatke —</div>
+      </div>
+      <div class="muted" style="margin-top:12px">
+        Ispod je <b>puna preporuka</b> (brojevi + boje + wheel + ostali tipovi): klikni „🎲 Generiši preporuku” kad god hoćeš sve detalje.
+      </div>
+    </div>
+    <div class="card">
+      <h3>Kontrolna tabla <span class="muted" style="text-transform:none">— automatski prati držanje i wheel set</span></h3>
+      <div id="dashBox" class="muted">—</div>
+    </div>
+  </section>
+
   <!-- ═══ ISTORIJA ═══ -->
-  <section id="panel-istorija" class="panel active">
+  <section id="panel-istorija" class="panel">
     <div class="card">
       <h3>Kolo u toku (sa feed-a)</h3>
       <div id="liveBox" class="muted">— nema podataka —</div>
@@ -124,7 +167,7 @@
       </div>
     </div>
     <div class="card">
-      <h3>Zadnjih 40 kola</h3>
+      <h3>Zadnjih 120 kola</h3>
       <div style="overflow:auto;max-height:480px"><table id="histTable"></table></div>
     </div>
   </section>
@@ -250,18 +293,38 @@
   <!-- ═══ PODACI ═══ -->
   <section id="panel-podesavanja" class="panel">
     <div class="card">
-      <h3>Feed sa GitHub Actions skripte</h3>
+      <h3>Feed sa GitHub Actions skripte <span class="muted" style="text-transform:none">— već je podešen, ne diraj</span></h3>
       <div class="row">
-        <input type="url" id="feedUrl" placeholder="https://raw.githubusercontent.com/KORISNIK/REPO/main/data/bingo-results.json" style="flex:1;min-width:280px">
+        <input type="url" id="feedUrl" placeholder="https://raw.githubusercontent.com/dexilio13-ui/wingo/refs/heads/main/data/bingo-results.json" style="flex:1;min-width:280px">
         <button id="btnSaveUrl" class="primary">Sačuvaj & učitaj</button>
+        <button id="btnDefaultUrl" class="small">Vrati podrazumevani</button>
       </div>
-      <p class="muted" style="font-size:12px">Primer: ako je tvoj repo <code>ivan/bingo</code>, URL je
-      <code>https://raw.githubusercontent.com/ivan/bingo/main/data/bingo-results.json</code>.
-      Ako koristiš GitHub Pages, može i <code>https://ivan.github.io/bingo/data/bingo-results.json</code>.
+      <p class="muted" style="font-size:12px">Podrazumevano je postavljen javni feed <b>ovog repoa</b> — podaci stižu automatski
+      (GitHub Action radi na svakih 5 min i ažurira JSON). Ništa ne moraš da kucaš ručno.
       Alat polaže podatke i lokalno (localStorage) — feed se osvežava na 60 s dok je stranica otvorena.</p>
     </div>
     <div class="card">
-      <h3>Ručni unos / zalepljen JSON</h3>
+      <h3>Automatsko osvežavanje (GitHub Action)</h3>
+      <p class="muted" style="font-size:12.5px;margin-top:0">
+        Workflow <code>Update bingo results</code> radi <b>automatski na svakih 5 minuta</b> (cron) — feed uvek ima najnovija kola bez ikakve akcije.
+        Ako želiš da dugme „↻ Feed” / „Generiši preporuku” <i>odmah</i> pokrene i novo izvlačenje podataka sa volcanobeta, dva načina:
+      </p>
+      <div class="row" style="margin:8px 0">
+        <label style="flex:1;min-width:260px">GitHub token (opcija A):
+          <input type="password" id="ghToken" placeholder="github_pat_… (samo scopes: repo)" style="width:100%">
+        </label>
+        <label><input type="checkbox" id="chkLocalTrigger"> Opcija B: koristi lokalni server (START-ALL.bat / npm run serve)</label>
+      </div>
+      <p class="muted" style="font-size:12px">
+        Token se čuva <b>samo lokalno</b> u tvom browseru (localStorage) i šalje isključivo GitHub API-ju.
+        Napravi ga na: <a href="https://github.com/settings/personal-access-tokens/new?fine_grained_permissions=actions%3Awrite" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>
+        (Fine-grained → <b>Actions: Write</b> na repou <code>dexilio13-ui/wingo</code>).
+        Status svih pokretanja: <a href="https://github.com/dexilio13-ui/wingo/actions/workflows/update-bingo.yml" target="_blank" rel="noopener">Actions → update-bingo.yml</a>.
+      </p>
+      <div id="actionStatus" class="muted" style="font-size:12.5px"></div>
+    </div>
+    <div class="card">
+      <h3>Ručni unos / zalepljen JSON <span class="muted" style="text-transform:none">— samo ako feed ne radi</span></h3>
       <label>Unesi jedno kolo (brojevi razdvojeni zarezom/space, najnovije prvo u tabeli):</label>
       <div class="row" style="margin:8px 0">
         <input type="text" id="manualBalls" placeholder="npr. 3, 11, 19, 27, 35 (za Wingo 5/35) ili do 35 brojeva" style="flex:1;min-width:240px">
@@ -285,7 +348,7 @@
           <option value="36">36</option>
           <option value="40">40</option>
         </select></label>
-        <label>Dubina analize (kola): <input type="number" id="depth" min="10" max="120" value="40" style="width:70px"></label>
+        <label>Dubina analize (kola): <input type="number" id="depth" min="10" max="240" value="120" style="width:70px"></label>
         <label>
           <input type="checkbox" id="chkNotify"> Browser notifikacija kad novo kolo završi
         </label>

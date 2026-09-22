@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Volcanobet Bingo — zadnjih 40 kola</title>
+<title>Volcanobet Bingo — zadnjih 120 kola</title>
 <style>
   :root {
     --bg: #12141a;
@@ -53,6 +53,8 @@
     padding: 12px 16px; border-radius: 10px; margin-bottom: 14px; font-size: 14px;
   }
   .hidden { display: none; }
+  .rhythm { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; }
+  .rhythm b { color: var(--text); }
 
   /* ── kolo u toku ── */
   .live {
@@ -105,6 +107,18 @@
     display: inline-block; margin-left: 10px; color: var(--accent); font-size: 13px;
     text-decoration: none; border: 1px solid var(--accent); border-radius: 999px; padding: 3px 12px;
   }
+  dialog {
+    background: var(--card); color: var(--text); border: 1px solid var(--card-border);
+    border-radius: 12px; padding: 16px 18px; max-width: 520px; width: 92%;
+  }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+  dialog input[type=password] {
+    width: 100%; background: #10131a; border: 1px solid var(--card-border); color: var(--text);
+    border-radius: 8px; padding: 8px 10px; font-size: 13px; margin: 8px 0;
+  }
+  dialog .hint { font-size: 12px; color: var(--muted); line-height: 1.55; }
+  dialog .row { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  #actionStat { font-size: 12px; color: var(--muted); margin-top: 8px; }
   footer { padding: 10px 18px 24px; color: var(--muted); font-size: 12px; text-align: center; }
   footer a { color: var(--muted); }
 </style>
@@ -112,11 +126,12 @@
 <body>
 
 <header>
-  <h1>🎰 Volcanobet Bingo <small>— zadnjih 40 kola</small></h1>
+  <h1>🎰 Volcanobet Bingo <small>— zadnjih 120 kola</small></h1>
   <div class="meta">
     <span id="stats">učitavam…</span>
     <span id="updated"></span>
     <button id="refresh" type="button">↻ Osveži</button>
+    <button id="actionCfg" type="button" title="GitHub token za pokretanje Action-a iz browsera">⚙</button>
     <span class="dot" title="auto-osvežavanje na 60 s"></span>
   </div>
 </header>
@@ -132,11 +147,32 @@
 
   <div id="error" class="error hidden"></div>
   <section id="live" class="live hidden"></section>
+  <div id="rhythm" class="rhythm">⏱ ritam: …</div>
   <section id="statsBox" class="stats hidden"></section>
   <div id="rounds" class="grid"></div>
 </main>
 
 <footer>Podaci: javni feed stranice <a href="https://www.volcanobet.rs/bingo?tab=tickets&amp;results=last" target="_blank" rel="noopener">volcanobet.rs/bingo</a> · auto-osvežavanje na 60 s · <a href="wingo.html">Wingo taktika</a> · <a href="wingo.html#vodic">📖 Pravila & taktika</a></footer>
+
+<dialog id="tokenDlg">
+  <h3 style="margin:0 0 6px;font-size:15px">⚙️ Automatsko osvežavanje (GitHub Action)</h3>
+  <p class="hint">Workflow već radi <b>automatski na svakih 5 min</b> — feed je uvek svež. Ako želiš da dugme „↻ Osveži”
+  <i>odmah</i> pokrene i novo izvlačenje sa volcanobeta, nalepi GitHub token (samo lokalno, u tvom browseru):</p>
+  <input type="password" id="tokenInput" placeholder="github_pat_… (Fine-grained, Actions: Write)">
+  <p class="hint">Napravi ga ovde:
+    <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--accent)">github.com/settings/personal-access-tokens/new</a>
+    → Repository access: <b>dexilio13-ui/wingo</b> → Permissions → Actions: <b>Write</b>.<br>
+    Bez tokena: pokreni <b>START-ALL.bat</b> (ili <code>npm run serve</code>) — tada „↻ Osveži” okida Action preko lokalnog servera.<br>
+    Status svih pokretanja:
+    <a href="https://github.com/dexilio13-ui/wingo/actions/workflows/update-bingo.yml" target="_blank" rel="noopener" style="color:var(--accent)">Actions → update-bingo.yml</a>
+  </p>
+  <div id="actionStat"></div>
+  <div class="row">
+    <button id="tokenClear" type="button" class="small">Obriši token</button>
+    <button id="tokenCancel" type="button">Zatvori</button>
+    <button id="tokenSave" type="button" class="primary">Sačuvaj & osveži</button>
+  </div>
+</dialog>
 
 <script>
 "use strict";
@@ -154,6 +190,8 @@ const dateFmt = new Intl.DateTimeFormat("sr-RS", {
   timeZone: "Europe/Belgrade", day: "2-digit", month: "2-digit",
   hour: "2-digit", minute: "2-digit"
 });
+
+const fmtDur = (ms) => `${Math.floor(ms / 60000)} min ${String(Math.round((ms % 60000) / 1000)).padStart(2, "0")} s`;
 
 function fmtDrawn(iso) {
   if (!iso) return "";
@@ -298,6 +336,47 @@ function liveSection(live) {
   sec.appendChild(ballRow(live.balls, { total: 35 }));
 }
 
+/* ── Ritam izvlačenja ──────────────────────────────────────────────────── */
+
+let prevRoundTime = null; // start zadnje prikazane (novije) kole — za trajanje na karti
+
+function renderRhythm(data) {
+  const box = $("#rhythm");
+  if (!box) return;
+  const ry = data.rhythm || null;
+  const est = data.estimate || null;
+  const rs = (data.rounds || []).filter((r) => r.drawn_at).sort((a, b) => a.round_number - b.round_number);
+
+  // medijan: prvo sa servera (rhythm blok), otherwise lokalna procena iz kartica
+  let med = ry?.median_ms || null;
+  let sample = ry?.sample_gaps || 0;
+  if (!med && rs.length >= 2) {
+    const gaps = [];
+    for (let i = 1; i < rs.length; i++) {
+      const dt = new Date(rs[i].drawn_at) - new Date(rs[i - 1].drawn_at);
+      if (dt > 0 && dt < 30 * 60_000) gaps.push(dt); // ignoriši pauze/održavanja
+    }
+    gaps.sort((a, b) => a - b);
+    if (gaps.length) { med = gaps[Math.floor(gaps.length / 2)]; sample = gaps.length; }
+  }
+
+  if (!med) { box.textContent = "⏱ ritam: — (treba bar 2 kola sa vremenom izvlačenja)"; return; }
+
+  const parts = [`⏱ prosečno kolo traje <b>${fmtDur(med)}</b> (mereno na ${sample} razmaka)`];
+  if (est?.current_round_number) {
+    parts.push(`· kolo <b>#${est.current_round_number}</b> bi trebalo da je u toku`);
+    if (est.next_round_number && est.seconds_to_next_start != null) {
+      parts.push(`· sledeće <b>#${est.next_round_number}</b> za ~<b>${fmtDur(est.seconds_to_next_start * 1000)}</b>`);
+    }
+    if (est.feed_age_seconds != null && est.feed_age_seconds > 10 * 60) {
+      parts.push('· <span style="color:var(--live)">feed zastareo — klikni ↻ Osveži</span>');
+    } else if (est.stale) {
+      parts.push('· <span style="color:var(--live)">feed možda zastareo — klikni ↻ Osveži</span>');
+    }
+  }
+  box.innerHTML = parts.join(" ");
+}
+
 /* ── Kartice kola ──────────────────────────────────────────────────────── */
 
 let lastSeenTopRound = null;
@@ -316,6 +395,20 @@ function roundCard(round, fresh) {
   t.textContent = fmtDrawn(round.drawn_at);
   head.append(no, t);
   card.appendChild(head);
+
+  // okvirno trajanje: gap do sledećeg (starijeg) kola — start→start
+  if (round.drawn_at && prevRoundTime) {
+    const dt = prevRoundTime - new Date(round.drawn_at).getTime();
+    if (dt > 0 && dt < 30 * 60_000) {
+      const d = document.createElement("div");
+      d.className = "round-time";
+      d.style.margin = "-6px 0 8px";
+      d.style.fontSize = "11.5px";
+      d.textContent = `⏱ trajalo ~${fmtDur(dt)} (do početka sledećeg)`;
+      card.appendChild(d);
+    }
+  }
+  if (round.drawn_at) prevRoundTime = new Date(round.drawn_at).getTime();
 
   const ss = new Set();
   if (round.sweet_spot != null) ss.add(round.sweet_spot);
@@ -343,37 +436,114 @@ function showError(msg) {
   el.classList.remove("hidden");
 }
 
+/* ── Učitavanje feeda ──────────────────────────────────────────────────── */
+
+function applyData(data, remote) {
+  $("#error").classList.add("hidden");
+  $("#stats").textContent = `${data.rounds_count} kola · zadnje #${data.rounds[0]?.round_number ?? "—"}${remote ? " (remote)" : ""}`;
+  $("#updated").textContent = fmtUpdated(data.updated_at);
+
+  liveSection(data.live_round);
+  renderStats(data.stats, data.stats?.computed_over_rounds);
+  renderRhythm(data);
+
+  prevRoundTime = null;
+  const rounds = [...(data.rounds || [])].sort((a, b) => b.round_number - a.round_number);
+  const top = rounds[0]?.round_number ?? null;
+  const fresh = lastSeenTopRound != null && top != null && top > lastSeenTopRound;
+
+  const grid = $("#rounds");
+  grid.replaceChildren();
+  for (const r of rounds) grid.appendChild(roundCard(r, fresh && r.round_number === top));
+  lastSeenTopRound = top;
+}
+
+const REMOTE_FEED = "https://raw.githubusercontent.com/dexilio13-ui/wingo/refs/heads/main/data/bingo-results.json";
+
 async function load() {
   try {
     // cache-busting: GitHub Pages CDN kešira ~10 min, ?t= forsira svež JSON
     const res = await fetch(`data/bingo-results.json?t=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
-
-    $("#error").classList.add("hidden");
-    $("#stats").textContent = `${data.rounds_count} kola · zadnje #${data.rounds[0]?.round_number ?? "—"}`;
-    $("#updated").textContent = fmtUpdated(data.updated_at);
-
-    liveSection(data.live_round);
-    renderStats(data.stats, data.stats?.computed_over_rounds);
-
-    const rounds = [...(data.rounds || [])].sort((a, b) => b.round_number - a.round_number);
-    const top = rounds[0]?.round_number ?? null;
-    const fresh = lastSeenTopRound != null && top != null && top > lastSeenTopRound;
-
-    const grid = $("#rounds");
-    grid.replaceChildren();
-    for (const r of rounds) grid.appendChild(roundCard(r, fresh && r.round_number === top));
-    lastSeenTopRound = top;
+    applyData(await res.json(), false);
   } catch (err) {
-    const hint = location.protocol === "file:"
-      ? " Otvori preko lokalnog servera: pokreni „npm run serve“ pa otvori http://localhost:8080 (browser blokira fetch sa file://)."
-      : "";
-    showError("Ne mogu da učitam data/bingo-results.json (" + (err?.message || err) + ")." + hint);
+    // ako lokalna kopija ne postoji (npr. GitHub Pages bez data/), probaj javni feed repoa
+    try {
+      const res2 = await fetch(`${REMOTE_FEED}?t=${Date.now()}`, { cache: "no-store" });
+      if (!res2.ok) throw new Error("HTTP " + res2.status);
+      applyData(await res2.json(), true);
+    } catch (err2) {
+      const hint = location.protocol === "file:"
+        ? " Otvori preko lokalnog servera: pokreni „npm run serve” pa otvori http://localhost:8080 (browser blokira fetch sa file://)."
+        : "";
+      showError("Ne mogu da učitam feed (" + (err2?.message || err2) + ")." + hint);
+    }
   }
 }
 
-$("#refresh").addEventListener("click", load);
+/* ── „Osveži”: povuci svež feed + (ako je podešeno) pokreni GitHub Action ── */
+
+const LS_TOKEN = "bingo.ghToken";
+const getTok = () => localStorage.getItem(LS_TOKEN) || "";
+const REPO = "dexilio13-ui/wingo";
+const WF = "update-bingo.yml";
+
+async function tryTriggerAction() {
+  const tok = getTok();
+  if (tok) {
+    try {
+      const r = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${WF}/dispatches`, {
+        method: "POST",
+        headers: { "Authorization": "token " + tok, "Accept": "application/vnd.github+json" },
+        body: JSON.stringify({ ref: "main", inputs: { quick: true } }),
+      });
+      if (r.ok) return { ok: true, via: "github" };
+      if (r.status === 401 || r.status === 403) return { ok: false, msg: "token nije valjan ili nema Actions: Write (HTTP " + r.status + ")" };
+      return { ok: false, msg: "GitHub API: HTTP " + r.status };
+    } catch (e) { return { ok: false, msg: "GitHub API greška: " + (e?.message || e) }; }
+  }
+  try {
+    const r = await fetch("/trigger");
+    if (r.ok) return { ok: true, via: "lokalni server" };
+  } catch { /* nije lokalni server */ }
+  return { ok: false, msg: "" }; // tiho: Action ionako radi na cron 5 min
+}
+
+$("#refresh").addEventListener("click", async () => {
+  const btn = $("#refresh");
+  btn.disabled = true; const old = btn.textContent; btn.textContent = "⏳ osvežavam…";
+  const trig = await tryTriggerAction();
+  const stat = $("#actionStat");
+  if (trig.ok) stat.textContent = `✓ Action pokrenut (${trig.via}) — svež feed stiže za ~1–2 min.`;
+  else if (trig.msg) stat.textContent = "⚠ " + trig.msg;
+  await load();
+  btn.disabled = false; btn.textContent = old;
+});
+
+const dlg = $("#tokenDlg");
+$("#actionCfg").addEventListener("click", () => {
+  $("#tokenInput").value = getTok();
+  try { dlg.showModal(); } catch { /* već otvoren */ }
+});
+$("#tokenCancel").addEventListener("click", () => dlg.close());
+$("#tokenClear").addEventListener("click", () => {
+  localStorage.removeItem(LS_TOKEN);
+  $("#tokenInput").value = "";
+  $("#actionStat").textContent = "Token obrisan. Action i dalje radi automatski na 5 min (cron).";
+});
+$("#tokenSave").addEventListener("click", async () => {
+  const tok = $("#tokenInput").value.trim();
+  if (tok) localStorage.setItem(LS_TOKEN, tok);
+  else localStorage.removeItem(LS_TOKEN);
+  $("#actionStat").textContent = tok ? "Proveravam…" : "Token nije unet — Action i dalje radi automatski na 5 min.";
+  if (tok) {
+    const res = await tryTriggerAction();
+    $("#actionStat").textContent = res.ok
+      ? `✓ Token radi — Action pokrenut (${res.via}). Svež feed stiže za ~1–2 min.`
+      : "⚠ " + (res.msg || "Nije uspelo.");
+  }
+});
+
 setInterval(load, 60_000);
 load();
 </script>

@@ -35,13 +35,62 @@ const HUB_URL = "https://virtualbingodataprovider-VolcanoRs.xtreme.bet/hubs/mess
 // Vrednosti iz javnog FetchConfiguration odgovora za VolcanoRs tenant.
 const NULL_GUID = "00000000-0000-0000-0000-000000000000";
 
-const MAX_ROUNDS = 40;          // koliko kola čuvamo u JSON-u
+const MAX_ROUNDS = 120;         // koliko kola čuvamo u JSON-u (120 kola ≈ 7,7 h istorije; hub vraća ~10, ostatak se akumulira)
 const SOURCE_LABEL = "volcanobet.rs/bingo (tab: tickets / results=last)";
 const WATCH = process.argv.includes("--watch");
 const QUICK = process.argv.includes("--quick"); // bez čekanja na tekuće kolo (CI)
 
 const WEBHOOK_URL = process.env.BINGO_WEBHOOK_URL || "";
 const WEBHOOK_FORMAT = (process.env.BINGO_WEBHOOK_FORMAT || "auto").toLowerCase(); // auto|discord|slack|generic
+
+// ── Baza podataka: istorija preko 120 kola (za tačnu statistiku i ritam izvlačenja) ──
+const HISTORY_FILE = path.join(DATA_DIR, "bingo-history.json");
+const HISTORY_LIMIT = 300; // ~19 h istorije za analizu
+
+function readHistory() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(HISTORY_FILE, "utf8"));
+    return Array.isArray(raw.rounds) ? raw.rounds : [];
+  } catch {
+    return []; // prvo pokretanje — samo napred se beleži
+  }
+}
+
+function writeHistory(rounds) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(
+    HISTORY_FILE,
+    JSON.stringify({
+      note: "sporedni artefakt (gitignore-ovan): duža istorija preko 120 kola za analizu",
+      rounds_count: rounds.length,
+      rounds,
+    }, null, 2) + "\n",
+    "utf8"
+  );
+}
+
+/** Gap između početaka kola (start-to-start) iz istorije — osnova za ritam i procenu trenutnog kola. */
+function computeRhythm(rounds) {
+  const rs = rounds.filter((r) => r.round_number != null && r.drawn_at)
+    .sort((a, b) => a.round_number - b.round_number);
+  const gaps = [];
+  for (let i = 1; i < rs.length; i++) {
+    const dt = new Date(rs[i].drawn_at) - new Date(rs[i - 1].drawn_at);
+    if (Number.isFinite(dt) && dt > 0 && dt < 30 * 60_000) gaps.push(dt); // ignoriši pauze/održavanja ≥ 30 min
+  }
+  if (!gaps.length) return null;
+  const sorted = [...gaps].sort((a, b) => a - b);
+  const med = sorted[Math.floor(sorted.length / 2)];
+  const p25 = sorted[Math.floor(sorted.length * 0.25)];
+  const p75 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.75))];
+  return {
+    sample_gaps: gaps.length,
+    median_ms: Math.round(med),
+    p25_ms: Math.round(p25),
+    p75_ms: Math.round(p75),
+    updated_at: nowIso(),
+  };
+}
 
 // n % 8 — identična logika boje lopte kao u volcanobet frontendu (BallColorPipe)
 const BALL_COLORS = ["purple", "yellow", "green", "blue", "red", "brown", "orange", "black"];
@@ -65,11 +114,55 @@ function readStore() {
   };
 }
 
+/* ── Procena trenutnog kola (ritam izvlačenja) ─────────────────────────── */
+
+const fmtMs = (ms) => `${Math.floor(ms / 60_000)} min ${String(Math.round((ms % 60_000) / 1000)).padStart(2, "0")} s`;
+
+/**
+ * Na osnovu ritma (medijan start→start) i zadnjeg zabeleženog kola procenjuje:
+ *  - koje kolo je verovatno TRENUTNO u toku (podaci za njega još nisu u feedu),
+ *  - kada (okvirno) počinje sledeće kolo i koliko sekundi do tada,
+ *  - da li je feed zastareo (npr. cron nije radio).
+ * Ovo je procena za orijentaciju („čekaj do runde #X, to je za ~3 min”), ne garancija —
+ * pauze/održavanja pomeraju ritam (vidi p25/p75).
+ */
+function estimateCurrentRound(rhythm, lastRound, feedUpdatedIso) {
+  if (!rhythm || !lastRound || lastRound.drawn_at == null) return null;
+  const med = rhythm.median_ms || 228_000;
+  const start = new Date(lastRound.drawn_at).getTime();
+  if (!Number.isFinite(start)) return null;
+  const now = Date.now();
+  const elapsed = now - start;
+  const k = Math.max(0, Math.floor(elapsed / med)); // koliko punih ciklusa je prošlo od zadnjeg kola
+  const currentRound = lastRound.round_number + k;
+  const nextStart = start + (k + 1) * med;
+  const feedAgeS = feedUpdatedIso ? Math.max(0, Math.round((now - new Date(feedUpdatedIso).getTime()) / 1000)) : null;
+  return {
+    current_round_number: currentRound,
+    current_round_in_progress: elapsed - k * med < med - 20_000, // izvlačenje zauzima veći deo ciklusa
+    next_round_number: currentRound + 1,
+    next_start_estimate: new Date(nextStart).toISOString(),
+    seconds_to_next_start: Math.max(0, Math.round((nextStart - now) / 1000)),
+    cycle_ms: med,
+    cycle_label: fmtMs(med),
+    feed_age_seconds: feedAgeS,
+    stale: feedAgeS != null && feedAgeS > 2.5 * med + 60_000, // nema novog kola > ~2,5 ciklusa
+    generated_at: nowIso(),
+  };
+}
+
 function writeStore(store) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   store.rounds_count = store.rounds.length;
   store.updated_at = nowIso();
   store.stats = computeStats(store.rounds);
+  // ritam + procena trenutnog kola (istorija preko 120 kola → stabilnija procena)
+  const rhythm = computeRhythm(readHistory().concat(store.rounds));
+  if (rhythm) {
+    rhythm.cycle_label = fmtMs(rhythm.median_ms);
+    store.rhythm = rhythm;
+    store.estimate = estimateCurrentRound(rhythm, store.rounds[0], store.updated_at);
+  }
   fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2) + "\n", "utf8");
 }
 
@@ -164,6 +257,12 @@ function normalizePartial(p) {
  * koristi se za webhook notifikacije.
  */
 function mergeRounds(store, incomingRounds) {
+  // istorija (data/bingo-history.json, gitignore-ovana) — da statistika/ritam
+  // ostanu tačni i preko 120 kola, a glavni JSON ostane mali i brz
+  const history = readHistory();
+  const histByNo = new Map(history.map((r) => [r.round_number, r]));
+  for (const h of store.rounds) if (!histByNo.has(h.round_number)) histByNo.set(h.round_number, h);
+
   const known = new Set(store.rounds.map((r) => r.round_number));
   const byNumber = new Map(store.rounds.map((r) => [r.round_number, r]));
   const added = [];
@@ -182,6 +281,11 @@ function mergeRounds(store, incomingRounds) {
   store.rounds = [...byNumber.values()]
     .sort((a, b) => b.round_number - a.round_number)
     .slice(0, MAX_ROUNDS);
+
+  // upiši sva (i starija) kola u istoriju preko MAX_ROUNDS
+  for (const r of byNumber.values()) if (!histByNo.has(r.round_number)) histByNo.set(r.round_number, r);
+  writeHistory([...histByNo.values()].sort((a, b) => b.round_number - a.round_number).slice(0, HISTORY_LIMIT));
+
   return added;
 }
 
