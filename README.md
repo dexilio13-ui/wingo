@@ -208,6 +208,49 @@ mali ulozi, duže — ne „jedan veliki potes”.
 **Zašto minimum 6 kombinacija?** Jedna kombinacija od 6 je „sve ili ništa”. 6 kombinacija raspoređenih
 kao wheel pokriva više mogućih ishoda istim ulogom — zato alat nikad ne nudi manje od 6.
 
+### 🎫 Primer kupona — tačan redosled klikova u Volcanobet aplikaciji
+
+Primer pretpostavlja preporuku iz alata: **6 brojeva** `5, 11, 19, 27, 33, 42` i **6 kombinacija po 5**
+(naše wheel rasporede; tvoje stvarne kombinacije kopiraj sa liste u alatu — redosled brojeva nije bitan).
+
+| # | Kombinacija (5 brojeva) | Ulog |
+|---|---|---|
+| 1 | 5 · 11 · 19 · 27 · 33 | 20 din |
+| 2 | 5 · 11 · 19 · 27 · 42 | 20 din |
+| 3 | 5 · 11 · 19 · 33 · 42 | 20 din |
+| 4 | 5 · 11 · 27 · 33 · 42 | 20 din |
+| 5 | 5 · 19 · 27 · 33 · 42 | 20 din |
+| 6 | 11 · 19 · 27 · 33 · 42 | 20 din |
+
+**Ukupno: 6 × 20 = 120 din po kolu.** (Ovo je standardni C(6,5) wheel — svaka od tvojih 6 brojeva
+točno jednom "ispada" iz jedne kombinacije; alat ti uvek ispisuje trenutni set, pa tamo gledaj.)
+
+**Redosled klikova u Volcanobet aplikaciji:**
+
+1. **Prijavi se** i u glavnom meniju izaberi **Bingo → Wingo** (sekcija uživo, sa tabelom tokova kola).
+2. Sačekaš da se otvori **tiket panel** (obično desno ili dole na mobilnom — dugme „Ticket” / „Tiket”).
+3. Proveri gornji deo panela: **broj kola i tajmer** (koliko sekundi ostaje za uplatu). Ako piše manje
+   od ~30 s — sačekaj sledeće kolo, nemoj požurivati prvi tiket.
+4. **Biranje brojeva:** klik na broj u mreži 1–48 ga dodaje; klik na označen broj ga skida.
+   Oznaci **prvih 5 brojeva** prve kombinacije (npr. `5, 11, 19, 27, 33`).
+5. Klikni **dugme za ulog** i postavi **20 din** (ili klikni „+20” / ukucaj u polje za ulog).
+6. Klikni **„Add to ticket” / „Dodaj na tiket”** — kombinacija se spušta u listu ispod kao
+   *stavka 1/6*.
+7. **Očisti selekciju** (mali ✕ / „Clear” iznad mreže) i ponovi korake 4–6 za svih preostalih
+   5 kombinacija sa tabele — uvek dobijaš novu stavku na istom tiketu.
+8. Kada su sve 6 stavke na tiketu, proveri dno panela: **ukupan ulog mora pisati 120 din**
+   (6 × 20). Ako piše više — negde je ostala sedma kombinacija, skini je sa ✕ pre nego što
+   potvrdiš.
+9. Klikni **„Place bet” / „Uplati tiket”** i potvrdi u dijalogu. Tiket je prihvaćen kada dobiješ
+   potvrdu sa **ID tiketa** — screenshot ti ne mora ništa, alat ti ionako prati pogotke sam.
+10. **Pre sledećeg kola:** isti postupak (koraci 4–9) sa Istim brojevima — dok traje tvoje
+    „držanje” od 4 kola. Banner u alatu („sledeće kolo za ~X min”) ti je podsetnik kada je
+    vreme za sledeću uplatu.
+
+> 💡 **Ako ti se panel zatvori usred biranja** — ništa nije izgubljeno: tiket se uplaćuje tek na
+> „Place bet”, pa samo ponovo označi kombinacije. Ako propustiš jedno kolo, samo nastavi sa
+> sledećim — držanje od 4 kola je orijentir, ne obaveza.
+
 ## Notifikacije (webhook) — novo kolo završeno
 
 Postavi repo secret `BINGO_WEBHOOK_URL` (opciono `BINGO_WEBHOOK_FORMAT`) i Actions će
