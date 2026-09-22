@@ -1,13 +1,13 @@
 {
   "source": "volcanobet.rs/bingo (tab: tickets / results=last)",
-  "updated_at": "2026-09-22T11:09:30.223Z",
+  "updated_at": "2026-09-22T11:10:01.386Z",
   "rounds_count": 40,
   "rounds": [
     {
       "round_number": 554,
       "round_id": "e76efc2a-c720-446e-8462-5999fad7d2a9",
       "drawn_at": "2026-09-22T11:04:33.479919Z",
-      "captured_at": "2026-09-22T11:09:30.223Z",
+      "captured_at": "2026-09-22T11:10:01.386Z",
       "ball_count": 35,
       "balls": [
         41,
@@ -105,7 +105,7 @@
       "round_number": 553,
       "round_id": "a685583f-39d6-4eab-9720-db4699621d52",
       "drawn_at": "2026-09-22T11:00:45.479919Z",
-      "captured_at": "2026-09-22T11:09:30.223Z",
+      "captured_at": "2026-09-22T11:10:01.386Z",
       "ball_count": 35,
       "balls": [
         36,
@@ -203,7 +203,7 @@
       "round_number": 552,
       "round_id": "bec86411-626f-4146-9a1e-afc4165a233c",
       "drawn_at": "2026-09-22T10:56:57.479919Z",
-      "captured_at": "2026-09-22T11:09:30.223Z",
+      "captured_at": "2026-09-22T11:10:01.386Z",
       "ball_count": 35,
       "balls": [
         17,
@@ -301,7 +301,7 @@
       "round_number": 551,
       "round_id": "043c36e0-646a-43a2-a437-6975d3b77d9d",
       "drawn_at": "2026-09-22T10:53:09.479919Z",
-      "captured_at": "2026-09-22T11:09:30.223Z",
+      "captured_at": "2026-09-22T11:10:01.386Z",
       "ball_count": 35,
       "balls": [
         27,
@@ -399,7 +399,7 @@
       "round_number": 550,
       "round_id": "692e10e8-0ea6-4d8b-a8e0-5966c92de8fa",
       "drawn_at": "2026-09-22T10:49:21.479919Z",
-      "captured_at": "2026-09-22T11:09:30.223Z",
+      "captured_at": "2026-09-22T11:10:01.386Z",
       "ball_count": 35,
       "balls": [
         6,
@@ -497,7 +497,7 @@
       "round_number": 549,
       "round_id": "cb23de77-3341-4a08-ae06-f4584e924a15",
       "drawn_at": "2026-09-22T10:45:33.479919Z",
-      "captured_at": "2026-09-22T11:09:30.223Z",
+      "captured_at": "2026-09-22T11:10:01.386Z",
       "ball_count": 35,
       "balls": [
         30,
@@ -595,7 +595,7 @@
       "round_number": 548,
       "round_id": "0f354bcb-c090-4072-bd3b-e96e9c3e999c",
       "drawn_at": "2026-09-22T10:41:45.479919Z",
-      "captured_at": "2026-09-22T11:09:30.223Z",
+      "captured_at": "2026-09-22T11:10:01.386Z",
       "ball_count": 35,
       "balls": [
         2,
@@ -693,7 +693,7 @@
       "round_number": 547,
       "round_id": "59411cd8-7863-441f-8441-a3213587d9d9",
       "drawn_at": "2026-09-22T10:37:57.479919Z",
-      "captured_at": "2026-09-22T11:09:30.223Z",
+      "captured_at": "2026-09-22T11:10:01.386Z",
       "ball_count": 35,
       "balls": [
         9,
@@ -791,7 +791,7 @@
       "round_number": 546,
       "round_id": "9e311403-5fa8-4939-bf07-0a794edf7c20",
       "drawn_at": "2026-09-22T10:34:09.479919Z",
-      "captured_at": "2026-09-22T11:09:30.223Z",
+      "captured_at": "2026-09-22T11:10:01.386Z",
       "ball_count": 35,
       "balls": [
         13,
@@ -889,7 +889,7 @@
       "round_number": 545,
       "round_id": "abadba0c-a9e4-4024-b7e3-e17a2ab06e21",
       "drawn_at": "2026-09-22T10:30:21.479919Z",
-      "captured_at": "2026-09-22T11:09:30.223Z",
+      "captured_at": "2026-09-22T11:10:01.386Z",
       "ball_count": 35,
       "balls": [
         2,
@@ -987,7 +987,7 @@
       "round_number": 544,
       "round_id": "62c8fcaa-942c-4899-a2d9-7df20605040e",
       "drawn_at": "2026-09-22T10:26:33.479919Z",
-      "captured_at": "2026-09-22T11:09:30.223Z",
+      "captured_at": "2026-09-22T11:10:01.386Z",
       "ball_count": 35,
       "balls": [
         5,
@@ -4314,6 +4314,6 @@
         "percentage": 12.6
       }
     },
-    "updated_at": "2026-09-22T11:09:30.224Z"
+    "updated_at": "2026-09-22T11:10:01.387Z"
   }
 }
