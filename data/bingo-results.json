@@ -1,6 +1,6 @@
 {
   "source": "volcanobet.rs/bingo (tab: tickets / results=last)",
-  "updated_at": "2026-10-05T15:31:24.094Z",
+  "updated_at": "2026-10-05T22:08:48.711Z",
   "rounds_count": 120,
   "rounds": [
     {
@@ -12154,26 +12154,26 @@
         "percentage": 12.6
       }
     },
-    "updated_at": "2026-10-05T15:31:24.096Z"
+    "updated_at": "2026-10-05T22:08:48.712Z"
   },
   "rhythm": {
     "sample_gaps": 117,
     "median_ms": 228000,
     "p25_ms": 228000,
     "p75_ms": 228000,
-    "updated_at": "2026-10-05T15:31:24.098Z",
+    "updated_at": "2026-10-05T22:08:48.714Z",
     "cycle_label": "3 min 48 s"
   },
   "estimate": {
-    "current_round_number": 5550,
+    "current_round_number": 5655,
     "current_round_in_progress": true,
-    "next_round_number": 5551,
-    "next_start_estimate": "2026-10-05T15:33:09.479Z",
-    "seconds_to_next_start": 105,
+    "next_round_number": 5656,
+    "next_start_estimate": "2026-10-05T22:12:09.479Z",
+    "seconds_to_next_start": 201,
     "cycle_ms": 228000,
     "cycle_label": "3 min 48 s",
     "feed_age_seconds": 0,
     "stale": false,
-    "generated_at": "2026-10-05T15:31:24.098Z"
+    "generated_at": "2026-10-05T22:08:48.714Z"
   }
 }
