@@ -1,6 +1,6 @@
 {
   "source": "volcanobet.rs/bingo (tab: tickets / results=last)",
-  "updated_at": "2026-11-08T07:39:38.757Z",
+  "updated_at": "2026-11-08T14:30:28.653Z",
   "rounds_count": 120,
   "rounds": [
     {
@@ -11275,492 +11275,492 @@
     },
     {
       "round_number": 2503,
-      "round_id": "2686d928-c8bc-4bc0-a351-c516902e0c18",
-      "drawn_at": "2026-10-25T14:28:45.479919Z",
-      "captured_at": "2026-10-25T15:01:28.337Z",
+      "round_id": "41bf0360-5b9b-4b41-bec5-d1d618244afa",
+      "drawn_at": "2026-11-08T14:27:45.479919Z",
+      "captured_at": "2026-11-08T14:30:28.652Z",
       "ball_count": 35,
       "balls": [
-        19,
-        27,
-        15,
-        35,
-        8,
         16,
-        45,
-        7,
-        44,
-        34,
-        21,
-        20,
-        12,
-        32,
-        41,
-        29,
-        18,
-        47,
-        38,
-        9,
-        11,
-        39,
         28,
-        22,
-        33,
-        13,
-        23,
-        25,
-        40,
-        10,
-        24,
+        26,
         37,
+        11,
+        3,
+        19,
+        22,
+        41,
+        9,
+        24,
+        39,
+        45,
+        5,
+        13,
+        10,
+        15,
+        8,
         6,
-        46,
-        3
+        14,
+        17,
+        4,
+        25,
+        2,
+        35,
+        48,
+        21,
+        34,
+        40,
+        44,
+        23,
+        27,
+        30,
+        31,
+        47
       ],
       "ball_colors": [
-        "blue",
-        "blue",
-        "black",
-        "blue",
         "purple",
-        "purple",
-        "brown",
-        "black",
         "red",
         "green",
         "brown",
-        "red",
-        "red",
-        "purple",
-        "yellow",
-        "brown",
-        "green",
-        "black",
-        "orange",
-        "yellow",
         "blue",
-        "black",
-        "red",
+        "blue",
+        "blue",
         "orange",
         "yellow",
-        "brown",
-        "black",
         "yellow",
         "purple",
+        "black",
+        "brown",
+        "brown",
+        "brown",
+        "green",
+        "black",
+        "purple",
+        "orange",
+        "orange",
+        "yellow",
+        "red",
+        "yellow",
+        "green",
+        "blue",
+        "purple",
+        "brown",
         "green",
         "purple",
-        "brown",
+        "red",
+        "black",
+        "blue",
         "orange",
-        "orange",
-        "blue"
+        "black",
+        "black"
       ],
       "first_five": [
-        19,
-        27,
-        15,
-        35,
-        8
-      ],
-      "last_ball": 3,
-      "sweet_spot": 24,
-      "sweet_spot2": 20,
-      "jackpot_numbers": [
-        41,
-        38,
+        16,
         28,
-        23,
-        3
+        26,
+        37,
+        11
+      ],
+      "last_ball": 47,
+      "sweet_spot": 31,
+      "sweet_spot2": 47,
+      "jackpot_numbers": [
+        13,
+        6,
+        25,
+        21,
+        47
       ]
     },
     {
       "round_number": 2502,
-      "round_id": "535ed096-4b78-4fb0-a40e-427ca1db3522",
-      "drawn_at": "2026-10-25T14:24:57.479919Z",
-      "captured_at": "2026-10-25T15:01:28.337Z",
+      "round_id": "da190261-4f3a-4774-b43f-d29604bc6c7a",
+      "drawn_at": "2026-11-08T14:23:57.479919Z",
+      "captured_at": "2026-11-08T14:30:28.652Z",
       "ball_count": 35,
       "balls": [
-        5,
-        48,
-        15,
-        31,
-        47,
-        38,
-        20,
-        4,
-        12,
-        34,
-        29,
-        13,
-        37,
-        41,
+        42,
         7,
-        44,
-        28,
-        32,
-        19,
-        24,
-        30,
-        2,
-        40,
-        21,
-        9,
-        33,
         26,
-        8,
-        27,
-        39,
-        46,
+        24,
         25,
+        45,
+        17,
+        4,
+        9,
+        22,
+        29,
+        2,
+        15,
+        34,
+        30,
+        33,
+        36,
+        6,
+        32,
+        16,
+        48,
+        31,
+        20,
+        40,
+        41,
         43,
+        35,
+        44,
+        11,
+        1,
+        14,
         18,
-        10
+        27,
+        37,
+        46
       ],
       "ball_colors": [
-        "brown",
+        "green",
+        "black",
+        "green",
         "purple",
-        "black",
-        "black",
-        "black",
+        "yellow",
+        "brown",
+        "yellow",
+        "red",
+        "yellow",
         "orange",
-        "red",
-        "red",
-        "red",
+        "brown",
         "green",
-        "brown",
-        "brown",
-        "brown",
-        "yellow",
         "black",
-        "red",
-        "red",
-        "purple",
-        "blue",
-        "purple",
-        "orange",
         "green",
-        "purple",
-        "brown",
-        "yellow",
-        "yellow",
-        "green",
-        "purple",
-        "blue",
-        "black",
         "orange",
         "yellow",
+        "red",
+        "orange",
+        "purple",
+        "purple",
+        "purple",
+        "black",
+        "red",
+        "purple",
+        "yellow",
         "blue",
+        "blue",
+        "red",
+        "blue",
+        "yellow",
+        "orange",
         "green",
-        "green"
+        "blue",
+        "brown",
+        "orange"
       ],
       "first_five": [
-        5,
-        48,
-        15,
-        31,
-        47
-      ],
-      "last_ball": 10,
-      "sweet_spot": 40,
-      "sweet_spot2": 20,
-      "jackpot_numbers": [
+        42,
         7,
-        19,
-        40,
         26,
-        10
+        24,
+        25
+      ],
+      "last_ball": 46,
+      "sweet_spot": 16,
+      "sweet_spot2": 9,
+      "jackpot_numbers": [
+        30,
+        32,
+        20,
+        35,
+        46
       ]
     },
     {
       "round_number": 2501,
-      "round_id": "f2e2ac70-3798-43b3-b53b-bc27e95ae254",
-      "drawn_at": "2026-10-25T14:21:09.479919Z",
-      "captured_at": "2026-10-25T15:01:28.337Z",
+      "round_id": "52bd0e0b-7ff2-4db3-a412-975ee3e54883",
+      "drawn_at": "2026-11-08T14:20:09.479919Z",
+      "captured_at": "2026-11-08T14:30:28.652Z",
       "ball_count": 35,
       "balls": [
-        17,
-        6,
-        24,
-        25,
-        47,
-        28,
-        10,
-        9,
-        34,
-        46,
-        45,
-        48,
-        19,
-        40,
-        42,
-        44,
-        1,
-        39,
-        26,
-        7,
-        13,
-        14,
-        12,
-        20,
-        21,
-        31,
-        8,
-        23,
-        3,
-        15,
-        29,
-        37,
-        33,
-        22,
-        5
-      ],
-      "ball_colors": [
-        "yellow",
-        "orange",
-        "purple",
-        "yellow",
-        "black",
-        "red",
-        "green",
-        "yellow",
-        "green",
-        "orange",
-        "brown",
-        "purple",
-        "blue",
-        "purple",
-        "green",
-        "red",
-        "yellow",
-        "black",
-        "green",
-        "black",
-        "brown",
-        "orange",
-        "red",
-        "red",
-        "brown",
-        "black",
-        "purple",
-        "black",
-        "blue",
-        "black",
-        "brown",
-        "brown",
-        "yellow",
-        "orange",
-        "brown"
-      ],
-      "first_five": [
-        17,
-        6,
-        24,
-        25,
-        47
-      ],
-      "last_ball": 5,
-      "sweet_spot": 34,
-      "sweet_spot2": 24,
-      "jackpot_numbers": [
-        42,
-        26,
-        12,
-        8,
-        5
-      ]
-    },
-    {
-      "round_number": 2491,
-      "round_id": "01d506fe-0304-42e3-be05-55146c1ee1e9",
-      "drawn_at": "2026-11-01T13:44:33.479919Z",
-      "captured_at": "2026-11-01T13:48:14.106Z",
-      "ball_count": 35,
-      "balls": [
-        47,
-        20,
-        42,
-        26,
-        34,
-        39,
-        8,
-        16,
-        24,
-        22,
-        38,
-        35,
-        7,
-        3,
-        30,
-        43,
-        18,
-        10,
-        23,
-        9,
-        37,
-        28,
-        36,
-        29,
-        45,
-        33,
-        41,
-        4,
-        44,
-        12,
-        40,
-        46,
-        1,
-        25,
-        13
-      ],
-      "ball_colors": [
-        "black",
-        "red",
-        "green",
-        "green",
-        "green",
-        "black",
-        "purple",
-        "purple",
-        "purple",
-        "orange",
-        "orange",
-        "blue",
-        "black",
-        "blue",
-        "orange",
-        "blue",
-        "green",
-        "green",
-        "black",
-        "yellow",
-        "brown",
-        "red",
-        "red",
-        "brown",
-        "brown",
-        "yellow",
-        "yellow",
-        "red",
-        "red",
-        "red",
-        "purple",
-        "orange",
-        "yellow",
-        "yellow",
-        "brown"
-      ],
-      "first_five": [
-        47,
-        20,
-        42,
-        26,
-        34
-      ],
-      "last_ball": 13,
-      "sweet_spot": 9,
-      "sweet_spot2": 33,
-      "jackpot_numbers": [
-        30,
-        23,
-        36,
-        41,
-        13
-      ]
-    },
-    {
-      "round_number": 2490,
-      "round_id": "f77b2437-8c1b-4cb0-8e6d-46597ccf698d",
-      "drawn_at": "2026-11-01T13:40:45.479919Z",
-      "captured_at": "2026-11-01T13:48:14.106Z",
-      "ball_count": 35,
-      "balls": [
-        2,
-        26,
-        29,
-        40,
-        6,
-        1,
-        24,
-        17,
-        13,
-        37,
-        22,
-        42,
-        28,
-        35,
-        39,
-        7,
-        38,
-        5,
-        19,
-        31,
-        11,
-        43,
-        12,
-        27,
-        30,
-        20,
-        33,
-        47,
-        36,
-        4,
-        9,
         32,
-        25,
-        3,
-        23
-      ],
-      "ball_colors": [
-        "green",
-        "green",
-        "brown",
-        "purple",
-        "orange",
-        "yellow",
-        "purple",
-        "yellow",
-        "brown",
-        "brown",
-        "orange",
-        "green",
-        "red",
-        "blue",
-        "black",
-        "black",
-        "orange",
-        "brown",
-        "blue",
-        "black",
-        "blue",
-        "blue",
-        "red",
-        "blue",
-        "orange",
-        "red",
-        "yellow",
-        "black",
-        "red",
-        "red",
-        "yellow",
-        "purple",
-        "yellow",
-        "blue",
-        "black"
-      ],
-      "first_five": [
-        2,
-        26,
-        29,
-        40,
-        6
-      ],
-      "last_ball": 23,
-      "sweet_spot": 13,
-      "sweet_spot2": 9,
-      "jackpot_numbers": [
-        39,
+        10,
+        9,
+        44,
+        18,
+        6,
         19,
         12,
+        5,
+        15,
+        7,
+        23,
+        27,
+        28,
+        34,
+        45,
+        11,
+        1,
+        48,
+        46,
+        3,
+        26,
+        47,
+        20,
+        36,
+        24,
+        30,
+        4,
+        21,
+        29,
+        37,
+        39,
+        31,
+        2,
+        16
+      ],
+      "ball_colors": [
+        "purple",
+        "green",
+        "yellow",
+        "red",
+        "green",
+        "orange",
+        "blue",
+        "red",
+        "brown",
+        "black",
+        "black",
+        "black",
+        "blue",
+        "red",
+        "green",
+        "brown",
+        "blue",
+        "yellow",
+        "purple",
+        "orange",
+        "blue",
+        "green",
+        "black",
+        "red",
+        "red",
+        "purple",
+        "orange",
+        "red",
+        "brown",
+        "brown",
+        "brown",
+        "black",
+        "black",
+        "green",
+        "purple"
+      ],
+      "first_five": [
+        32,
+        10,
+        9,
+        44,
+        18
+      ],
+      "last_ball": 16,
+      "sweet_spot": 36,
+      "sweet_spot2": 39,
+      "jackpot_numbers": [
+        34,
+        48,
+        47,
+        30,
+        16
+      ]
+    },
+    {
+      "round_number": 2500,
+      "round_id": "657fd661-94fe-4b4f-939d-7fe65a6b821f",
+      "drawn_at": "2026-11-08T14:16:21.479919Z",
+      "captured_at": "2026-11-08T14:30:28.652Z",
+      "ball_count": 35,
+      "balls": [
+        45,
+        23,
+        39,
+        25,
+        11,
         33,
-        23
+        6,
+        31,
+        28,
+        4,
+        10,
+        7,
+        16,
+        9,
+        24,
+        5,
+        40,
+        36,
+        35,
+        34,
+        8,
+        37,
+        12,
+        42,
+        41,
+        48,
+        46,
+        13,
+        27,
+        47,
+        15,
+        1,
+        18,
+        17,
+        44
+      ],
+      "ball_colors": [
+        "brown",
+        "black",
+        "black",
+        "yellow",
+        "blue",
+        "yellow",
+        "orange",
+        "black",
+        "red",
+        "red",
+        "green",
+        "black",
+        "purple",
+        "yellow",
+        "purple",
+        "brown",
+        "purple",
+        "red",
+        "blue",
+        "green",
+        "purple",
+        "brown",
+        "red",
+        "green",
+        "yellow",
+        "purple",
+        "orange",
+        "brown",
+        "blue",
+        "black",
+        "black",
+        "yellow",
+        "green",
+        "yellow",
+        "red"
+      ],
+      "first_five": [
+        45,
+        23,
+        39,
+        25,
+        11
+      ],
+      "last_ball": 44,
+      "sweet_spot": 47,
+      "sweet_spot2": 5,
+      "jackpot_numbers": [
+        24,
+        35,
+        12,
+        46,
+        44
+      ]
+    },
+    {
+      "round_number": 2499,
+      "round_id": "1555ac8a-f612-4f8e-b317-66823f0eaba8",
+      "drawn_at": "2026-11-08T14:12:33.479919Z",
+      "captured_at": "2026-11-08T14:30:28.652Z",
+      "ball_count": 35,
+      "balls": [
+        14,
+        47,
+        33,
+        13,
+        39,
+        42,
+        35,
+        37,
+        23,
+        19,
+        3,
+        16,
+        40,
+        7,
+        18,
+        43,
+        36,
+        45,
+        20,
+        48,
+        11,
+        34,
+        24,
+        5,
+        17,
+        1,
+        41,
+        22,
+        12,
+        29,
+        32,
+        31,
+        38,
+        2,
+        26
+      ],
+      "ball_colors": [
+        "orange",
+        "black",
+        "yellow",
+        "brown",
+        "black",
+        "green",
+        "blue",
+        "brown",
+        "black",
+        "blue",
+        "blue",
+        "purple",
+        "purple",
+        "black",
+        "green",
+        "blue",
+        "red",
+        "brown",
+        "red",
+        "purple",
+        "blue",
+        "green",
+        "purple",
+        "brown",
+        "yellow",
+        "yellow",
+        "yellow",
+        "orange",
+        "red",
+        "brown",
+        "purple",
+        "black",
+        "orange",
+        "green",
+        "green"
+      ],
+      "first_five": [
+        14,
+        47,
+        33,
+        13,
+        39
+      ],
+      "last_ball": 26,
+      "sweet_spot": 23,
+      "sweet_spot2": 1,
+      "jackpot_numbers": [
+        18,
+        20,
+        24,
+        41,
+        26
       ]
     }
   ],
@@ -11770,12 +11770,17 @@
     "balls_total": 4200,
     "number_frequency": [
       {
-        "number": 33,
-        "count": 96,
+        "number": 48,
+        "count": 98,
         "percentage": 2.3
       },
       {
-        "number": 38,
+        "number": 16,
+        "count": 97,
+        "percentage": 2.3
+      },
+      {
+        "number": 31,
         "count": 96,
         "percentage": 2.3
       },
@@ -11785,42 +11790,42 @@
         "percentage": 2.3
       },
       {
-        "number": 48,
-        "count": 95,
-        "percentage": 2.3
-      },
-      {
-        "number": 9,
-        "count": 94,
-        "percentage": 2.2
-      },
-      {
-        "number": 16,
-        "count": 94,
-        "percentage": 2.2
-      },
-      {
         "number": 24,
         "count": 94,
         "percentage": 2.2
       },
       {
-        "number": 31,
+        "number": 33,
         "count": 94,
         "percentage": 2.2
       },
       {
-        "number": 22,
+        "number": 5,
         "count": 93,
         "percentage": 2.2
       },
       {
-        "number": 5,
+        "number": 9,
+        "count": 93,
+        "percentage": 2.2
+      },
+      {
+        "number": 36,
+        "count": 93,
+        "percentage": 2.2
+      },
+      {
+        "number": 38,
+        "count": 93,
+        "percentage": 2.2
+      },
+      {
+        "number": 11,
         "count": 92,
         "percentage": 2.2
       },
       {
-        "number": 8,
+        "number": 22,
         "count": 92,
         "percentage": 2.2
       },
@@ -11840,87 +11845,72 @@
         "percentage": 2.2
       },
       {
-        "number": 36,
-        "count": 91,
-        "percentage": 2.2
-      },
-      {
-        "number": 39,
-        "count": 91,
-        "percentage": 2.2
-      },
-      {
         "number": 44,
         "count": 91,
         "percentage": 2.2
       },
       {
-        "number": 11,
-        "count": 89,
+        "number": 8,
+        "count": 90,
+        "percentage": 2.1
+      },
+      {
+        "number": 39,
+        "count": 90,
         "percentage": 2.1
       },
       {
         "number": 4,
-        "count": 88,
+        "count": 89,
         "percentage": 2.1
       },
       {
         "number": 35,
-        "count": 88,
-        "percentage": 2.1
-      },
-      {
-        "number": 47,
-        "count": 88,
+        "count": 89,
         "percentage": 2.1
       },
       {
         "number": 6,
+        "count": 88,
+        "percentage": 2.1
+      },
+      {
+        "number": 17,
+        "count": 88,
+        "percentage": 2.1
+      },
+      {
+        "number": 27,
+        "count": 88,
+        "percentage": 2.1
+      },
+      {
+        "number": 2,
+        "count": 87,
+        "percentage": 2.1
+      },
+      {
+        "number": 18,
+        "count": 87,
+        "percentage": 2.1
+      },
+      {
+        "number": 34,
+        "count": 87,
+        "percentage": 2.1
+      },
+      {
+        "number": 47,
         "count": 87,
         "percentage": 2.1
       },
       {
         "number": 7,
-        "count": 87,
-        "percentage": 2.1
-      },
-      {
-        "number": 12,
-        "count": 87,
-        "percentage": 2.1
-      },
-      {
-        "number": 25,
-        "count": 87,
-        "percentage": 2.1
-      },
-      {
-        "number": 27,
-        "count": 87,
-        "percentage": 2.1
-      },
-      {
-        "number": 17,
         "count": 86,
         "percentage": 2
       },
       {
-        "number": 18,
-        "count": 86,
-        "percentage": 2
-      },
-      {
-        "number": 19,
-        "count": 86,
-        "percentage": 2
-      },
-      {
-        "number": 34,
-        "count": 86,
-        "percentage": 2
-      },
-      {
-        "number": 40,
+        "number": 15,
         "count": 86,
         "percentage": 2
       },
@@ -11930,72 +11920,77 @@
         "percentage": 2
       },
       {
+        "number": 12,
+        "count": 85,
+        "percentage": 2
+      },
+      {
+        "number": 19,
+        "count": 85,
+        "percentage": 2
+      },
+      {
+        "number": 25,
+        "count": 85,
+        "percentage": 2
+      },
+      {
+        "number": 40,
+        "count": 85,
+        "percentage": 2
+      },
+      {
         "number": 46,
-        "count": 86,
-        "percentage": 2
-      },
-      {
-        "number": 2,
         "count": 85,
-        "percentage": 2
-      },
-      {
-        "number": 15,
-        "count": 85,
-        "percentage": 2
-      },
-      {
-        "number": 3,
-        "count": 84,
-        "percentage": 2
-      },
-      {
-        "number": 20,
-        "count": 84,
         "percentage": 2
       },
       {
         "number": 1,
+        "count": 84,
+        "percentage": 2
+      },
+      {
+        "number": 3,
         "count": 83,
         "percentage": 2
       },
       {
         "number": 10,
-        "count": 83,
+        "count": 82,
+        "percentage": 2
+      },
+      {
+        "number": 14,
+        "count": 82,
+        "percentage": 2
+      },
+      {
+        "number": 20,
+        "count": 82,
+        "percentage": 2
+      },
+      {
+        "number": 45,
+        "count": 82,
         "percentage": 2
       },
       {
         "number": 13,
-        "count": 83,
-        "percentage": 2
-      },
-      {
-        "number": 29,
-        "count": 83,
-        "percentage": 2
-      },
-      {
-        "number": 21,
         "count": 81,
         "percentage": 1.9
       },
       {
-        "number": 14,
+        "number": 29,
+        "count": 81,
+        "percentage": 1.9
+      },
+      {
+        "number": 21,
         "count": 80,
         "percentage": 1.9
       },
       {
-        "number": 28,
-        "count": 80,
-        "percentage": 1.9
-      },
-      {
-        "number": 43,
-        "count": 80,
-        "percentage": 1.9
-      },
-      {
-        "number": 45,
+        "number": 41,
         "count": 80,
         "percentage": 1.9
       },
@@ -12005,19 +12000,29 @@
         "percentage": 1.9
       },
       {
-        "number": 41,
+        "number": 43,
         "count": 79,
+        "percentage": 1.9
+      },
+      {
+        "number": 28,
+        "count": 78,
         "percentage": 1.9
       }
     ],
     "top_numbers": [
       {
-        "number": 33,
-        "count": 96,
+        "number": 48,
+        "count": 98,
         "percentage": 2.3
       },
       {
-        "number": 38,
+        "number": 16,
+        "count": 97,
+        "percentage": 2.3
+      },
+      {
+        "number": 31,
         "count": 96,
         "percentage": 2.3
       },
@@ -12027,44 +12032,44 @@
         "percentage": 2.3
       },
       {
-        "number": 48,
-        "count": 95,
-        "percentage": 2.3
-      },
-      {
-        "number": 9,
-        "count": 94,
-        "percentage": 2.2
-      },
-      {
-        "number": 16,
-        "count": 94,
-        "percentage": 2.2
-      },
-      {
         "number": 24,
         "count": 94,
         "percentage": 2.2
       },
       {
-        "number": 31,
+        "number": 33,
         "count": 94,
         "percentage": 2.2
       },
       {
-        "number": 22,
+        "number": 5,
         "count": 93,
         "percentage": 2.2
       },
       {
-        "number": 5,
-        "count": 92,
+        "number": 9,
+        "count": 93,
+        "percentage": 2.2
+      },
+      {
+        "number": 36,
+        "count": 93,
+        "percentage": 2.2
+      },
+      {
+        "number": 38,
+        "count": 93,
         "percentage": 2.2
       }
     ],
     "cold_numbers": [
       {
-        "number": 41,
+        "number": 28,
+        "count": 78,
+        "percentage": 1.9
+      },
+      {
+        "number": 43,
         "count": 79,
         "percentage": 1.9
       },
@@ -12074,106 +12079,101 @@
         "percentage": 1.9
       },
       {
-        "number": 45,
-        "count": 80,
-        "percentage": 1.9
-      },
-      {
-        "number": 43,
-        "count": 80,
-        "percentage": 1.9
-      },
-      {
-        "number": 28,
-        "count": 80,
-        "percentage": 1.9
-      },
-      {
-        "number": 14,
+        "number": 41,
         "count": 80,
         "percentage": 1.9
       },
       {
         "number": 21,
-        "count": 81,
+        "count": 80,
         "percentage": 1.9
       },
       {
         "number": 29,
-        "count": 83,
-        "percentage": 2
+        "count": 81,
+        "percentage": 1.9
       },
       {
         "number": 13,
-        "count": 83,
+        "count": 81,
+        "percentage": 1.9
+      },
+      {
+        "number": 45,
+        "count": 82,
         "percentage": 2
       },
       {
-        "number": 10,
-        "count": 83,
+        "number": 20,
+        "count": 82,
+        "percentage": 2
+      },
+      {
+        "number": 14,
+        "count": 82,
         "percentage": 2
       }
     ],
     "even_odd": {
-      "even": 2111,
-      "odd": 2089,
+      "even": 2112,
+      "odd": 2088,
       "even_percentage": 50.3,
       "odd_percentage": 49.7
     },
     "colors": {
       "purple": {
-        "count": 552,
-        "percentage": 13.1
+        "count": 555,
+        "percentage": 13.2
       },
       "yellow": {
-        "count": 525,
+        "count": 524,
         "percentage": 12.5
       },
       "green": {
-        "count": 505,
-        "percentage": 12
+        "count": 508,
+        "percentage": 12.1
       },
       "blue": {
-        "count": 514,
-        "percentage": 12.2
+        "count": 516,
+        "percentage": 12.3
       },
       "red": {
-        "count": 521,
-        "percentage": 12.4
+        "count": 518,
+        "percentage": 12.3
       },
       "brown": {
-        "count": 514,
+        "count": 512,
         "percentage": 12.2
       },
       "orange": {
-        "count": 533,
-        "percentage": 12.7
+        "count": 531,
+        "percentage": 12.6
       },
       "black": {
         "count": 536,
         "percentage": 12.8
       }
     },
-    "updated_at": "2026-11-08T07:39:38.758Z"
+    "updated_at": "2026-11-08T14:30:28.654Z"
   },
   "rhythm": {
-    "sample_gaps": 113,
+    "sample_gaps": 107,
     "median_ms": 228000,
     "p25_ms": 228000,
     "p75_ms": 228000,
-    "updated_at": "2026-11-08T07:39:38.759Z",
+    "updated_at": "2026-11-08T14:30:28.655Z",
     "cycle_label": "3 min 48 s"
   },
   "estimate": {
-    "current_round_number": 10352,
+    "current_round_number": 10460,
     "current_round_in_progress": true,
-    "next_round_number": 10353,
-    "next_start_estimate": "2026-11-08T07:41:09.479Z",
-    "seconds_to_next_start": 91,
+    "next_round_number": 10461,
+    "next_start_estimate": "2026-11-08T14:31:33.479Z",
+    "seconds_to_next_start": 65,
     "cycle_ms": 228000,
     "cycle_label": "3 min 48 s",
     "feed_age_seconds": 0,
     "stale": false,
-    "generated_at": "2026-11-08T07:39:38.759Z"
+    "generated_at": "2026-11-08T14:30:28.656Z"
   }
 }
